@@ -20,10 +20,13 @@ class waveWidget(QtWidgets.QWidget):
 
         # ---- 构建trace ---- #
         self.traces = {} # name -> trace_info dict
-        self.hLines = {} # name -> hLine
+        self.trace_cursor_hLines = {} # name -> trace_cursor_hLines
         self.data = {}   # name -> data array
         self.unit = {}   # name -> unit string
         self.label = {}  # name -> label string
+
+        # ---- 基本状态变量 ---- #
+        self.trace_cursor_visible = True
 
         # ---- 布局 ----
         self.lay = QtWidgets.QVBoxLayout(self)
@@ -50,7 +53,6 @@ class waveWidget(QtWidgets.QWidget):
 
         # ---- 数据 ----
         self.freq = None
-        self.s21 = None
 
         # ---- 鼠标联动 ----
         self.proxy_amp = pg.SignalProxy(self.pw.scene().sigMouseMoved,
@@ -78,15 +80,16 @@ class waveWidget(QtWidgets.QWidget):
         self.data[name] = np.asarray(y_data, dtype=float)
         self.traces[name]=self.pw.plot(pen=pg.mkPen(trace_color, width=1.8), name=name)
         self.traces[name].setData(self.freq, self.data[name])
-        self.hLines[name] = pg.InfiniteLine(angle=0, movable=False,
+        self.trace_cursor_hLines[name] = pg.InfiniteLine(angle=0, movable=False,
                                             pen=pg.mkPen(cursor_color, width=1.2))
         self.unit[name] = unit
         self.label[name] = label
         
-        self.pw.addItem(self.hLines[name])
+        self.pw.addItem(self.trace_cursor_hLines[name])
 
         # 默认光标到第一个点
         self._set_cursor(1)
+        self.cursor_label_position_update()
 
     # ---------------- 光标私有 ----------------
     def _set_cursor(self, idx):
@@ -94,9 +97,9 @@ class waveWidget(QtWidgets.QWidget):
             return
         f0 = np.log10(self.freq[idx])
         data = {}
-        for name in self.hLines.keys():
+        for name in self.trace_cursor_hLines.keys():
             value = self.data[name][idx]
-            self.hLines[name].setPos(value)
+            self.trace_cursor_hLines[name].setPos(value)
             data[name] = value
 
         # 上方
@@ -108,6 +111,43 @@ class waveWidget(QtWidgets.QWidget):
     def _mouse_moved(self, evt):
         self._mouse_common(evt[0])
 
+    # ---------------- cursor Label 更新 ----------------
+    def cursor_label_update(self, freq, data_dict):
+        if freq == 0 or not data_dict:
+            self.cursor_label.setText("")
+            return
+        freq_hz = 10 ** freq
+        text = f"Freq: {freq_hz/1e6:.3f} MHz\n"
+        for name, value in data_dict.items():
+            unit = self.unit.get(name, '')
+            label = self.label.get(name, name)
+            text += f"{label}: {value:.3f} {unit}\n"
+        self.cursor_label.setText(text.strip())
+
+    # ---------------- cursor Label 位置更新 ----------------
+    def cursor_label_position_update(self):
+        view_rect = self.pw.viewRect()
+        x_pos = view_rect.right()
+        y_pos = view_rect.bottom()
+        self.cursor_label.setPos(x_pos, y_pos)
+
+    # ---------------- cursor Label 可视化切换 ----------------
+    def cursor_label_set_visible(self, visible: bool):
+        self.cursor_label.setVisible(visible)
+
+    # ---------------- trace cursor hLine 可视化切换 ----------------
+    def trace_cursor_hLine_set_visible(self, name: str=None, visible: bool=True):
+        if name is None:
+            for hLine in self.trace_cursor_hLines.values():
+                hLine.setVisible(visible)
+            self.vLine.setVisible(visible)
+            self.trace_cursor_visible = visible
+            self.cursor_label.setVisible(visible)
+            return
+        elif name in self.trace_cursor_hLines:
+            self.trace_cursor_hLines[name].setVisible(visible)
+
+    # ----------------- mouse 共同处理 ----------------
     def _mouse_common(self, pos):
         pw = self.pw
         if not pw.sceneBoundingRect().contains(pos):
@@ -121,3 +161,4 @@ class waveWidget(QtWidgets.QWidget):
         else:
             idx = int(np.argmin(np.abs(self.freq - x)))
         self._set_cursor(idx)
+        self.cursor_label_update(np.log10(self.freq[idx]), {name: self.data[name][idx] for name in self.data})
