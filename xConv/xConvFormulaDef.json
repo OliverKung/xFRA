@@ -1,0 +1,8 @@
+{
+  "z0": "50",
+  "omega": "2*pi*freq",
+  "s21_db": "db(s21)",
+  "z21_config3": "2*(-z0+s21*z0)/(s21)",
+  "imZ21_config3": "imag(z21_config3)",
+  "capZ21": "1/(imZ21_config3*omega)*1e12"
+}
