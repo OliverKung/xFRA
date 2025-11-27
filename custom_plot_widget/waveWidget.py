@@ -95,7 +95,10 @@ class waveWidget(QtWidgets.QWidget):
     def _set_cursor(self, idx):
         if self.freq is None:
             return
-        f0 = np.log10(self.freq[idx])
+        if self._freq_axis == 'log':
+            f0 = np.log10(self.freq[idx])
+        else:
+            f0 = self.freq[idx]
         data = {}
         for name in self.trace_cursor_hLines.keys():
             value = self.data[name][idx]
@@ -159,6 +162,9 @@ class waveWidget(QtWidgets.QWidget):
         if self._freq_axis == 'log':
             idx = int(np.argmin(np.abs(np.log10(self.freq) - x)))
         else:
+            print("linear mode")
+            # idx = int(np.argmin(np.abs(self.freq - x)))
             idx = int(np.argmin(np.abs(self.freq - x)))
+            print(x,idx,self.freq[idx])
         self._set_cursor(idx)
         self.cursor_label_update(np.log10(self.freq[idx]), {name: self.data[name][idx] for name in self.data})

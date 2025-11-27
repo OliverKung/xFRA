@@ -16,10 +16,10 @@ def main():
 
     # 2. 计算 S21 实部
     freq = s['freq']                       # Hz
-    s21_real = transformer.apply_formula(s,"log10(abs(z21_config3))")         # numpy.ndarray
+    s21_real = transformer.apply_formula(s,"capZ21")         # numpy.ndarray
 
     # 3. 创建 waveWidget 并添加 trace
-    win = waveWidget(freq_axis='lin')      # 或 'lin'
+    win = waveWidget(freq_axis='log')      # 或 'lin'
     win.setWindowTitle("cap.s2p  |S21| real part")
     win.add_trace(name='S21_real',
                   x_data=freq,
