@@ -1,4 +1,3 @@
-# s21_widget.py
 import numpy as np
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtWidgets

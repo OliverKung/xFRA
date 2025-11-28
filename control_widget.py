@@ -5,8 +5,8 @@ from PyQt5.QtWidgets import (QWidget, QGridLayout, QLabel, QSpinBox,
 from PyQt5.QtCore import pyqtSignal, Qt
 import math
 
-from custom_widget.QEngLineEdit import QEngLineEdit
-from custom_widget.QSwitchButton import QSwitchButton
+from basic_custom_widget.QEngLineEdit import QEngLineEdit
+from basic_custom_widget.QSwitchButton import QSwitchButton
 
 class ControlWidget(QWidget):
     # 任何参数改动都发这个信号，dict 携带最新值

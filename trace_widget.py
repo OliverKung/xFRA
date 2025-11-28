@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import (QWidget, QGridLayout, QLabel, QSpinBox,
                              QCheckBox, QFrame, QSplitter, QScrollArea)
 from PyQt5.QtCore import pyqtSignal, Qt
 import math
-from custom_widget.QDragGroupBox import DragWidget
+from basic_custom_widget.QDragGroupBox import DragWidget
 
 
 class TraceWidget(QWidget):
@@ -15,6 +15,7 @@ class TraceWidget(QWidget):
         super().__init__()
         self._build_ui()
         self._connect_signals()
+        self.data = {}
 
     # ---------- 构建 ----------
     def _build_ui(self):
@@ -23,16 +24,18 @@ class TraceWidget(QWidget):
         layout = QVBoxLayout(self)
         scroll = QScrollArea(self)
         self.dw = DragWidget()
+        self.dw.contentChanged.connect(self._notify)
         scroll.setWidget(self.dw)
         scroll.setWidgetResizable(True)
         layout.addWidget(scroll)
         self.dw.add_box()
 
-       
     # ---------- 信号 ----------
     def _connect_signals(self):
-        print("X")
+        # print("X")
+        return
 
     def _notify(self):
-        d = dict()
+        self.data = self.dw.get_all_content()
+        d = {"traces": self.data}
         self.params_changed.emit(d)

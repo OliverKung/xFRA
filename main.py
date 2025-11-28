@@ -59,7 +59,7 @@ class BodeAnalyzer(QMainWindow):
         self.trace = TraceWidget()
 
         # 控制面板改动 -> 刷新曲线
-        # self.ctrl.params_changed.connect(self.plot.replot)
+        self.trace.params_changed.connect(self.trace_params_changed)
 
         splitter.addWidget(self.ctrl)
         splitter.addWidget(self.plot)
@@ -67,6 +67,10 @@ class BodeAnalyzer(QMainWindow):
         splitter.setStretchFactor(1, 4)
         splitter.setStretchFactor(3, 4)
         self.setCentralWidget(splitter)
+        
+    def trace_params_changed(self, params: dict):
+        return
+        # self.plot.replot(params)
 
 
 if __name__ == '__main__':

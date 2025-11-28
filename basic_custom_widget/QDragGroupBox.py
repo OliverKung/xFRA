@@ -17,28 +17,26 @@ from trace_config import TraceConfigWidget
 # --------------------------------------------------
 # 1. 业务子控件：Trace X + 标题栏变色 + 双拖拽触发
 # --------------------------------------------------
-class MyGroupBox(QGroupBox):
-    innerChanged = pyqtSignal()
+class trace_config_GroupBox(QGroupBox):
+    params_changed = pyqtSignal(dict)
     COLOR_TABLE = ["#ef5350", "#ab47bc", "#5c6bc0",
                    "#29b6f6", "#66bb6a", "#ffa726"]
-    _auto_index = 0
 
-    def __init__(self, parent=None):
+    def __init__(self,index:int, parent=None):
         super().__init__(parent)
-        MyGroupBox._auto_index += 1
-        self.trace_id = MyGroupBox._auto_index
+        self.trace_id = index
         self.setTitle(f'Trace {self.trace_id}')
 
         # 仅标题栏背景色
         color = self.COLOR_TABLE[(self.trace_id - 1) % len(self.COLOR_TABLE)]
         self.setStyleSheet(f"""
-        MyGroupBox::title {{
+        trace_config_GroupBox::title {{
             background-color: {color};
             color: white;
             border-radius: 3px;
             padding: 4px 6px;
         }}
-        MyGroupBox {{
+        trace_config_GroupBox {{
             border: 1px solid {color};
             border-radius: 4px;
             margin-top: 4px;
@@ -47,6 +45,7 @@ class MyGroupBox(QGroupBox):
 
         # 内部控件
         self.trace_config = TraceConfigWidget()
+        self.trace_config.trace_config_changed.connect(self.on_inner_changed)
         self.btn_del = QPushButton('del')
         self.btn_del.clicked.connect(self._ask_delete)
 
@@ -66,10 +65,8 @@ class MyGroupBox(QGroupBox):
         outer = QVBoxLayout(self)
         outer.addWidget(container)
 
-        # 信号
-        # self.line.textChanged.connect(self.on_inner_changed)
-        # self.spin.valueChanged.connect(self.on_inner_changed)
-        # self.check.toggled.connect(self.on_inner_changed)
+        self.param = {}
+
         self.setMaximumHeight(420)
         self._drag_start_pos = None
 
@@ -96,11 +93,11 @@ class MyGroupBox(QGroupBox):
 
     # ---------- 内容 / 删除 / 动画 -----------------
     def get_content(self):
-        return {'trace_id': self.trace_id, 'line': self.line.text(),
-                'spin': self.spin.value(), 'check': self.check.isChecked()}
+        return self.param
 
-    def on_inner_changed(self):
-        self.innerChanged.emit()
+    def on_inner_changed(self, params: dict):
+        self.param=params
+        self.params_changed.emit(self.param)
 
     def _ask_delete(self):
         pw = self.parent()
@@ -135,7 +132,7 @@ class MyGroupBox(QGroupBox):
 # 2. 容器：增删、拖拽排序、自动居中、统一信号
 # --------------------------------------------------
 class DragWidget(QWidget):
-    contentChanged = pyqtSignal(list)
+    contentChanged = pyqtSignal(dict)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -146,14 +143,17 @@ class DragWidget(QWidget):
         self.btn_add.clicked.connect(self.add_box)
         self._lay.insertWidget(0, self.btn_add)
         self.setAcceptDrops(True)
+        self.trace_boxes = {}
+        self._total_traces = 0
 
     # ---------- 增 / 删 ------------------------------
     def add_box(self):
-        box = MyGroupBox()
-        box.innerChanged.connect(self._collect_and_emit)
+        self._total_traces += 1
+        self.trace_boxes[self._total_traces] = trace_config_GroupBox(self._total_traces)
+        box = self.trace_boxes[self._total_traces]
+        box.params_changed.connect(self._collect_and_emit)
         self._lay.insertWidget(self._lay.count() - 2, box)
         QTimer.singleShot(60, lambda: self._scroll_to_box(box))
-        self._collect_and_emit()
 
     def remove_box(self, box):
         self._lay.removeWidget(box)
@@ -172,7 +172,7 @@ class DragWidget(QWidget):
         widget = self.childAt(pos)
         if not widget:
             return
-        while widget and not isinstance(widget, MyGroupBox):
+        while widget and not isinstance(widget, trace_config_GroupBox):
             widget = widget.parentWidget()
         if not widget:
             return
@@ -196,12 +196,14 @@ class DragWidget(QWidget):
 
     # ---------- 统一采集 -----------------------------
     def _collect_and_emit(self):
-        data = []
-        # for i in range(self._lay.count()):
-        #     w = self._lay.itemAt(i).widget()
-        #     if isinstance(w, MyGroupBox):
-        #         data.append(w.get_content())
-        # self.contentChanged.emit(data)
+        data = {}
+        for idx, box in self.trace_boxes.items():
+            data[idx] = box.get_content()
+        self.contentChanged.emit(data)
+    # ---------- 采集不发送信号 ----------------------
+    def get_all_content(self):
+        data = [box.get_content() for box in self.trace_boxes.values()]
+        return data
 
 
 # --------------------------------------------------

@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-TraceConfig 控件 —— 切换 Format 时只刷新底部一行
-author : kimi
-date   : 2025-11-03
-"""
 import sys
 from typing import List, Dict, Any
 from PyQt5.QtWidgets import (
@@ -14,8 +9,8 @@ from PyQt5.QtWidgets import (
 # 顶部导入区补一行
 from PyQt5.QtCore import pyqtSignal   # <-- 新增
 
-from custom_widget.QLabelComboBox import QLabelComboBox
-from custom_widget.QIconButtonWidget import QIconButtonWidget
+from basic_custom_widget.QLabelComboBox import QLabelComboBox
+from basic_custom_widget.QIconButtonWidget import QIconButtonWidget
 
 
 # ==================================================================

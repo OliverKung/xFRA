@@ -8,7 +8,7 @@ from PyQt5.QtGui import QIcon, QFont
 from pyqtribbon import RibbonBar, RibbonButtonStyle, RibbonCategoryStyle,RibbonSpaceFindMode
 
 #===============Custom Widget============#
-from custom_widget.QIconButtonWidget import QIconButtonWidget
+from basic_custom_widget.QIconButtonWidget import QIconButtonWidget
 
 class customRibbonBar(RibbonBar):
     def __init__(self):
