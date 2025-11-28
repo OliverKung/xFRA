@@ -42,6 +42,9 @@ class customRibbonBar(RibbonBar):
         measurment_panel.addLargeButton("Single",QIcon("./icon/bootstrap/skip-end.svg"))
         measurment_panel.addLargeButton("Stop",QIcon("./icon/bootstrap/pause.svg"))
 
+        plot_panel = self.category_home.addPanel("Plot",showPanelOptionButton=False)
+        self.plot_large_button = plot_panel.addLargeButton("Plot",QIcon("./icon/bootstrap/graph-up-arrow.svg"))
+
         setup_panel = self.category_home.addPanel("Setup",showPanelOptionButton=False)
         setup_panel.addLargeButton("Transmit(Gain)",QIcon("./icon/transmission.png"))
         setup_panel.addLargeButton("Refelect(Impedance)",QIcon("./icon/reflection.png"))

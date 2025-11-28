@@ -29,13 +29,17 @@ class TraceWidget(QWidget):
         scroll.setWidgetResizable(True)
         layout.addWidget(scroll)
         self.dw.add_box()
+        self._notify()
 
     # ---------- 信号 ----------
     def _connect_signals(self):
-        # print("X")
         return
 
     def _notify(self):
         self.data = self.dw.get_all_content()
         d = {"traces": self.data}
         self.params_changed.emit(d)
+    
+    def get_trace_params(self):
+        self.data=self.dw.get_all_content()
+        return self.data

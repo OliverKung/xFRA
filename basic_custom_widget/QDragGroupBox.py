@@ -93,6 +93,7 @@ class trace_config_GroupBox(QGroupBox):
 
     # ---------- 内容 / 删除 / 动画 -----------------
     def get_content(self):
+        self.param=self.trace_config.get_config()
         return self.param
 
     def on_inner_changed(self, params: dict):
@@ -199,6 +200,7 @@ class DragWidget(QWidget):
         data = {}
         for idx, box in self.trace_boxes.items():
             data[idx] = box.get_content()
+        print("Drag Widget data", data)
         self.contentChanged.emit(data)
     # ---------- 采集不发送信号 ----------------------
     def get_all_content(self):
