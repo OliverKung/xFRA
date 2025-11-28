@@ -150,6 +150,48 @@ class waveWidget(QtWidgets.QWidget):
         elif name in self.trace_cursor_hLines:
             self.trace_cursor_hLines[name].setVisible(visible)
 
+    # --------------- 删除指定trace ---------------
+    def remove_trace(self, name: str=None):
+        if name in self.traces:
+            self.pw.removeItem(self.traces[name])
+            self.pw.removeItem(self.trace_cursor_hLines[name])
+            del self.traces[name]
+            del self.trace_cursor_hLines[name]
+            del self.data[name]
+            del self.unit[name]
+            del self.label[name]
+        #-----不指定名称时，清除所有迹线
+        else:
+            for trace in self.traces.values():
+                self.pw.removeItem(trace)
+            for hLine in self.trace_cursor_hLines.values():
+                self.pw.removeItem(hLine)
+            self.traces.clear()
+            self.trace_cursor_hLines.clear()
+            self.data.clear()
+            self.unit.clear()
+            self.label.clear()
+
+    # ----------------- 自动缩放 ----------------
+    def auto_range(self):
+        # ---------------- 获取所有数据的x和y的范围 ----------------
+        if not self.data:
+            return
+        all_y = np.concatenate(list(self.data.values()))
+        y_min = np.min(all_y)
+        y_max = np.max(all_y)
+        x_min = np.min(self.freq)
+        x_max = np.max(self.freq)
+        print(f"x: {x_min} to {x_max}, y: {y_min} to {y_max}")
+        # ---------------- 设置视图范围 ----------------
+        if self._freq_axis == 'log':
+            x_min = np.log10(x_min)
+            x_max = np.log10(x_max)
+        else:
+            pass
+        self.pw.setXRange(x_min, x_max, padding=0.02)
+        self.pw.setYRange(y_min, y_max, padding=0.1)
+
     # ----------------- mouse 共同处理 ----------------
     def _mouse_common(self, pos):
         pw = self.pw
@@ -162,9 +204,6 @@ class waveWidget(QtWidgets.QWidget):
         if self._freq_axis == 'log':
             idx = int(np.argmin(np.abs(np.log10(self.freq) - x)))
         else:
-            print("linear mode")
-            # idx = int(np.argmin(np.abs(self.freq - x)))
             idx = int(np.argmin(np.abs(self.freq - x)))
-            print(x,idx,self.freq[idx])
         self._set_cursor(idx)
         self.cursor_label_update(np.log10(self.freq[idx]), {name: self.data[name][idx] for name in self.data})

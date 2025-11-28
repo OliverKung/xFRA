@@ -17,6 +17,7 @@ def main():
     # 2. 计算 S21 实部
     freq = s['freq']                       # Hz
     s21_real = transformer.apply_formula(s,"capZ21")         # numpy.ndarray
+    z21_abs = transformer.apply_formula(s, "imag(z21_config3)")  # 计算阻抗幅值以供参考
 
     # 3. 创建 waveWidget 并添加 trace
     win = waveWidget(freq_axis='log')      # 或 'lin'
@@ -27,6 +28,14 @@ def main():
                   trace_color='#00bfff',
                   unit='pF',
                   label='Capacitance (pF)')
+    win.add_trace(name='Z21_abs',
+                  x_data=freq,
+                  y_data=z21_abs,
+                  trace_color='#ff7f50',
+                  unit='Ohm',
+                  label='|Z21| (Ohm)')
+    win.remove_trace('S21_real')  # 如果不想显示阻抗幅值，可以移除
+    win.auto_range()
     win.resize(900, 600)
     win.show()
 
