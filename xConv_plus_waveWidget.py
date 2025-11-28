@@ -16,7 +16,7 @@ def main():
 
     # 2. 计算 S21 实部
     freq = s['freq']                       # Hz
-    s21_real = transformer.apply_formula(s,"capZ21")         # numpy.ndarray
+    s21_real = transformer.apply_formula(s,"abs(capZ21)")         # numpy.ndarray
     z21_abs = transformer.apply_formula(s, "imag(z21_config3)")  # 计算阻抗幅值以供参考
 
     # 3. 创建 waveWidget 并添加 trace

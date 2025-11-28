@@ -13,9 +13,9 @@ The instrument communication layer (xDriver) provides a universal conversion lay
 - [ ] GUI data import and plotting
 - [ ] GUI data cursors
 ### xConv
-- [ ] Read and parse S2P files
-- [ ] Parse arbitrary formulas
-- [ ] Provide basic mathematical functions
+- [X] Read and parse S2P files
+- [X] Parse arbitrary formulas
+- [X] Provide basic mathematical functions
 ### xDriver
 - [ ] Define basic input/output formats
 - [ ] Driver for NanoVNA

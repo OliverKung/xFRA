@@ -73,7 +73,7 @@ class waveWidget(QtWidgets.QWidget):
         else:
             pw.setLogMode(x=False, y=False)
 
-    # ---------------- 数据入口 ----------------
+    # ---------------- 添加迹线 ----------------
     def add_trace(self,name, x_data, y_data, trace_color="#ff8c00",cursor_color='#ffeb3b', unit='dB',label=None):
         """freq: Hz, s21: 复数线性值"""
         self.freq = np.asarray(x_data, dtype=float)
@@ -90,6 +90,37 @@ class waveWidget(QtWidgets.QWidget):
         # 默认光标到第一个点
         self._set_cursor(1)
         self.cursor_label_position_update()
+    
+    # --------------- 删除指定trace ---------------
+    def remove_trace(self, name: str=None):
+        if name in self.traces:
+            self.pw.removeItem(self.traces[name])
+            self.pw.removeItem(self.trace_cursor_hLines[name])
+            del self.traces[name]
+            del self.trace_cursor_hLines[name]
+            del self.data[name]
+            del self.unit[name]
+            del self.label[name]
+        #-----不指定名称时，清除所有迹线
+        else:
+            for trace in self.traces.values():
+                self.pw.removeItem(trace)
+            for hLine in self.trace_cursor_hLines.values():
+                self.pw.removeItem(hLine)
+            self.traces.clear()
+            self.trace_cursor_hLines.clear()
+            self.data.clear()
+            self.unit.clear()
+            self.label.clear()
+        self.auto_range()
+
+    # ---------------- 坐标类型设置 ----------------
+    def set_freq_axis(self, freq_axis: str):
+        self._freq_axis = freq_axis.lower()
+        if self._freq_axis == 'log':
+            self.pw.setLogMode(x=True, y=False)
+        else:
+            self.pw.setLogMode(x=False, y=False)
 
     # ---------------- 光标私有 ----------------
     def _set_cursor(self, idx):
@@ -150,27 +181,7 @@ class waveWidget(QtWidgets.QWidget):
         elif name in self.trace_cursor_hLines:
             self.trace_cursor_hLines[name].setVisible(visible)
 
-    # --------------- 删除指定trace ---------------
-    def remove_trace(self, name: str=None):
-        if name in self.traces:
-            self.pw.removeItem(self.traces[name])
-            self.pw.removeItem(self.trace_cursor_hLines[name])
-            del self.traces[name]
-            del self.trace_cursor_hLines[name]
-            del self.data[name]
-            del self.unit[name]
-            del self.label[name]
-        #-----不指定名称时，清除所有迹线
-        else:
-            for trace in self.traces.values():
-                self.pw.removeItem(trace)
-            for hLine in self.trace_cursor_hLines.values():
-                self.pw.removeItem(hLine)
-            self.traces.clear()
-            self.trace_cursor_hLines.clear()
-            self.data.clear()
-            self.unit.clear()
-            self.label.clear()
+
 
     # ----------------- 自动缩放 ----------------
     def auto_range(self):
@@ -194,6 +205,8 @@ class waveWidget(QtWidgets.QWidget):
 
     # ----------------- mouse 共同处理 ----------------
     def _mouse_common(self, pos):
+        if self.data is None or self.freq is None or len(self.freq) == 0:
+            return
         pw = self.pw
         if not pw.sceneBoundingRect().contains(pos):
             return

@@ -48,6 +48,7 @@ class BodeAnalyzer(QMainWindow):
     def _create_ribbonbar(self):
         self.ribbon = customRibbonBar()
         self.setMenuBar(self.ribbon)
+        self.ribbon.new_button.clicked.connect(self.plot.replot)
 
     # ---------- 中心控件 ----------
     def _create_central(self):
@@ -58,7 +59,7 @@ class BodeAnalyzer(QMainWindow):
         self.trace = TraceWidget()
 
         # 控制面板改动 -> 刷新曲线
-        self.ctrl.params_changed.connect(self.plot.replot)
+        # self.ctrl.params_changed.connect(self.plot.replot)
 
         splitter.addWidget(self.ctrl)
         splitter.addWidget(self.plot)

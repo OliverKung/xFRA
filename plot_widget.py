@@ -3,53 +3,85 @@ import numpy as np
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor
+from custom_plot_widget.waveWidget import waveWidget
+from xConv.xConv import xConvFormulaTransformer,xConvS2PReader
 
 
 class PlotWidget(QWidget):
     def __init__(self):
         super().__init__()
-        self._view_mag = None
-        self._view_pha = None
-        self._curve_mag = None
-        self._curve_pha = None
         self._build_ui()
 
     # ---------- 构建 ----------
     def _build_ui(self):
         layout = QVBoxLayout(self)
 
+        self.wave_widget = {}
+
         # 上方：Magnitude
-        self.plot_mag = pg.PlotWidget(title="Magnitude")
-        self.plot_mag.setLabel('left', 'Magnitude', 'dB')
-        self.plot_mag.setLabel('bottom', 'Frequency', 'Hz')
-        self.plot_mag.setLogMode(x=True)
-        self.plot_mag.showGrid(x=True, y=True, alpha=0.3)
-        self.plot_mag.addLine(x=None, y=0, pen=pg.mkPen('w', width=1, style=Qt.DashLine))
-        self._curve_mag = self.plot_mag.plot(pen='cyan')
+        self.wave_widget['1'] = waveWidget(freq_axis='log')
+        layout.addWidget(self.wave_widget['1'])
+    
 
         # 下方：Phase
-        self.plot_pha = pg.PlotWidget(title="Phase")
-        self.plot_pha.setLabel('left', 'Phase', '°')
-        self.plot_pha.setLabel('bottom', 'Frequency', 'Hz')
-        self.plot_pha.setLogMode(x=True)
-        self.plot_pha.showGrid(x=True, y=True, alpha=0.3)
-        self.plot_pha.setYRange(-200, 200)
-        self._curve_pha = self.plot_pha.plot(pen='yellow')
+    # ---------- 添加/删除 wave widget ----------
+    def add_wave_widget(self, key, freq_axis='log'):
+        self.wave_widget[key] = waveWidget(freq_axis=freq_axis)
+        self.layout().addWidget(self.wave_widget[key])
+    
+    def del_wave_widget(self, key):
+        if key in self.wave_widget:
+            self.layout().removeWidget(self.wave_widget[key])
+            self.wave_widget[key].deleteLater()
+            del self.wave_widget[key]
+    # ---------- 指定waveWidget添加删除trace ----------
+    def add_trace(self, wave_key, name, x_data, y_data,
+                  trace_color='#00bfff', unit='', label=''):
+        if wave_key in self.wave_widget:
+            self.wave_widget[wave_key].add_trace(
+                name=name,
+                x_data=x_data,
+                y_data=y_data,
+                trace_color=trace_color,
+                unit=unit,
+                label=label
+            )
+    def remove_trace(self, wave_key, name):
+        if wave_key in self.wave_widget:
+            self.wave_widget[wave_key].remove_trace(name)
 
-        layout.addWidget(self.plot_mag, stretch=2)
-        layout.addWidget(self.plot_pha, stretch=1)
+    # ---------- 设置指定waveWidget坐标类型 ----------
+    def set_freq_axis(self, wave_key, freq_axis: str):
+        if wave_key in self.wave_widget:
+            self.wave_widget[wave_key].set_freq_axis(freq_axis)
 
+    
     # ---------- 刷新 ----------
     def replot(self, cfg: dict):
-        fstart = cfg['fstart']
-        fstop = cfg['fstop']
-        points = cfg['points']
-        f = np.logspace(np.log10(fstart), np.log10(fstop), points)
+        reader = xConvS2PReader("data\\GRM0115C1C100GE01_DC0V_25degC.s2p")     # 你的文件路径
+        s = reader.read()                      # dict: freq, s11, s12, s21, s22, z0
 
-        # 随便造一个二阶低通相位
-        fc = 15e3
-        mag = 20 * np.log10(1 / np.sqrt(1 + (f / fc) ** 4))
-        phase = -np.arctan(f / fc) * 2 * 180 / np.pi
+        transformer = xConvFormulaTransformer()
+        transformer.load_formulas(s, "xConv\\xConvFormulaDef.json")
 
-        self._curve_mag.setData(f, mag)
-        self._curve_pha.setData(f, phase)
+        # 2. 计算 S21 实部
+        freq = s['freq']                       # Hz
+        absCapZ21 = transformer.apply_formula(s,"abs(capZ21)")         # numpy.ndarray
+        z21_abs = transformer.apply_formula(s, "imag(z21_config3)")  # 计算阻抗幅值以供参考
+
+        self.set_freq_axis('1', freq_axis='log')
+        self.add_trace(wave_key='1',
+                       name='S21_real',
+                       x_data=freq,
+                       y_data=absCapZ21,
+                       trace_color='#00bfff',
+                       unit='pF',
+                       label='Capacitance (pF)')
+        self.add_wave_widget('2', freq_axis='lin')
+        self.add_trace(wave_key='2',
+                       name='Z21_abs',
+                       x_data=freq,
+                       y_data=z21_abs,
+                       trace_color='#ff7f50',
+                       unit='Ohm',
+                       label='|Z21| (Ohm)')
