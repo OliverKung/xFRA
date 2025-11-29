@@ -21,6 +21,7 @@ class BodeAnalyzer(QMainWindow):
         super().__init__()
         self.file_path = None
         self.s2pdata = None
+        self.xConv = xConvFormulaTransformer()
         self.setWindowTitle("xFRA - A Universal Frequency Response Analyzer ")
         self.resize(1920, 1080)
         self._create_menu()
@@ -76,9 +77,18 @@ class BodeAnalyzer(QMainWindow):
     
     def update_plot(self):
         self.trace_param = self.trace.get_trace_params()
-        
-        print(self.trace_param)
-        
+        if not self.s2pdata:
+            print("No data loaded yet.")
+            return
+        else:
+            self.xConv.load_formulas(self.s2pdata, "xConv\\xConvFormulaDef.json")
+        for trace in self.trace_param.values():
+            trace_data = self.xConv.apply_formula(self.s2pdata, trace['expression'])
+            self.plot.add_trace(
+                wave_key="1", 
+                name=trace['category']+'_'+trace['format'],
+                x_data=self.s2pdata['freq'],
+                y_data=trace_data)
 
     def open_file(self):
         # open the file select and save the file path to self.file_path
@@ -90,7 +100,6 @@ class BodeAnalyzer(QMainWindow):
         try:
             reader = xConvS2PReader(self.file_path)
             self.s2pdata = reader.read()
-            print(self.s2pdata)
             print("Data loaded successfully")
         except Exception as e:
             print(f"Failed to load data: {e}")

@@ -200,11 +200,13 @@ class DragWidget(QWidget):
         data = {}
         for idx, box in self.trace_boxes.items():
             data[idx] = box.get_content()
-        print("Drag Widget data", data)
+            data[idx]['trace_id'] = idx
         self.contentChanged.emit(data)
     # ---------- 采集不发送信号 ----------------------
     def get_all_content(self):
-        data = [box.get_content() for box in self.trace_boxes.values()]
+        data={}
+        for idx, box in self.trace_boxes.items():
+            data[idx] = box.get_content()
         return data
 
 

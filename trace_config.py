@@ -64,11 +64,16 @@ class TraceConfigWidget(QGroupBox):
         }
 
         meas_type = self.lcb_meas.currentText()
-        if meas_type == "Expr":
+        if meas_type == "Meas":
             category_type = self.lcb_category.currentText()
             if category_type == "Imped":
-                cfg["expression"] = "z11" # 2025年11月28日22点54分stop at here
-                pass  # 继续往下取参数
+                cfg["expression"] = "z11"
+            elif category_type == "Refl":
+                cfg["expression"] = "s11"
+            elif category_type == "Gain":
+                cfg["expression"] = "s21"
+            elif category_type == "Admit":
+                cfg["expression"] = "1/z11"
         else:
             pass  # 继续往下取参数
 
