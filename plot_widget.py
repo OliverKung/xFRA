@@ -46,7 +46,7 @@ class PlotWidget(QWidget):
                 unit=unit,
                 label=label
             )
-    def remove_trace(self, wave_key, name):
+    def remove_trace(self, wave_key, name=""):
         if wave_key in self.wave_widget:
             self.wave_widget[wave_key].remove_trace(name)
 

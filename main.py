@@ -82,6 +82,7 @@ class BodeAnalyzer(QMainWindow):
             return
         else:
             self.xConv.load_formulas(self.s2pdata, "xConv\\xConvFormulaDef.json")
+        self.plot.remove_trace(wave_key="1")
         for trace in self.trace_param.values():
             trace_data = self.xConv.apply_formula(self.s2pdata, trace['expression'])
             self.plot.add_trace(
