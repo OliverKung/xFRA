@@ -93,37 +93,13 @@ class TraceConfigWidget(QGroupBox):
         elif format == "Imag":
             cfg["expression"] = "imag({})".format(cfg["expression"])
         else:
-            pass  # Polar / Nyquist / Nichols 等等，暂不处理
+            pass
 
-        # ------- 底部动态页由 QStackedWidget 管理，按需取值 -------
-        idx = self.fmt_stack.currentIndex()
-        if idx == 0:          # Mag / Real / Imaginary / Tg
-            cfg.update({
-                "unwrap_phase" : False,               # 本页无此控件
-                "y_max"        : self.sb_Ymax_mag.value(),
-                "y_min"        : self.sb_Ymin_mag.value(),
-                "y_axis_scale" : self.cb_scale_mag.currentText(),
-                "y_max_suffix" : "",
-                "y_min_suffix" : "",
-            })
-        elif idx == 1:        # Mag(dB)
-            cfg.update({
-                "unwrap_phase" : False,
-                "y_max"        : self.sb_Ymax_db.value(),
-                "y_min"        : self.sb_Ymin_db.value(),
-                "y_axis_scale" : "Linear",
-                "y_max_suffix" : "dB",
-                "y_min_suffix" : "dB",
-            })
-        elif idx == 2:        # Phase(°) / Phase(Rad)
-            cfg.update({
-                "unwrap_phase" : False,
-                "y_max"        : self.sb_Ymax_ph.value(),
-                "y_min"        : self.sb_Ymin_ph.value(),
-                "y_axis_scale" : "Linear",
-                "y_max_suffix" : self.sb_Ymax_ph.suffix(),
-                "y_min_suffix" : self.sb_Ymin_ph.suffix(),
-            })
+        cfg.update({
+            "unwrap_phase" : self.checkbox_unwrap_phase.isChecked(),
+            "x_axis_scale" : self.lcb_x_axis_scale.currentText(),
+            "y_suffix"     : self.unit_suffix_lineedit.text(),
+        })
         return cfg
     # ------ 内部 UI ------
     def _init_ui(self):
@@ -176,40 +152,25 @@ class TraceConfigWidget(QGroupBox):
         self.top.addWidget(self.lcb_fmt)
 
         # 2. 底部动态：用 QStackedWidget 管理
-        self.fmt_stack = QStackedWidget()
-        self.top.addWidget(self.fmt_stack)
+        self.lcb_x_axis_scale = QLabelComboBox(
+            label_text="X-axis Scale",
+            combo_items=["Linear", "Log"]
+        )
+        self.top.addWidget(self.lcb_x_axis_scale)
 
-        # ---- 预先把每一页做好 ----
-        # 页 0：Mag / Real / Imaginary / Tg
-        page_mag = QWidget()
-        lay = QGridLayout(page_mag)
-        self.sb_Ymax_mag = QSpinBox();  self.sb_Ymin_mag = QSpinBox()
-        self.cb_scale_mag = QComboBox(); self.cb_scale_mag.addItems(["Linear", "Log"])
-        lay.addWidget(QLabel("Ymax"),0,0); lay.addWidget(self.sb_Ymax_mag,0,1)
-        lay.addWidget(QLabel("Ymin"),1,0); lay.addWidget(self.sb_Ymin_mag,1,1)
-        lay.addWidget(QLabel("Y-axis Scale"),2,0); lay.addWidget(self.cb_scale_mag,2,1)
-        self.fmt_stack.addWidget(page_mag)
+        unit_suffix_hbox = QHBoxLayout()
+        unit_suffix_hbox.addWidget(QLabel("Unit Suffix"))
+        self.unit_suffix_lineedit = QLineEdit()
+        unit_suffix_hbox.addWidget(self.unit_suffix_lineedit)
+        self.top.addLayout(unit_suffix_hbox)
 
-        # 页 1：Mag(dB)
-        page_db = QWidget()
-        lay = QGridLayout(page_db)
-        self.sb_Ymax_db = QSpinBox(); self.sb_Ymax_db.setSuffix("dB")
-        self.sb_Ymin_db = QSpinBox(); self.sb_Ymin_db.setSuffix("dB")
-        lay.addWidget(QLabel("Ymax"),0,0); lay.addWidget(self.sb_Ymax_db,0,1)
-        lay.addWidget(QLabel("Ymin"),1,0); lay.addWidget(self.sb_Ymin_db,1,1)
-        self.fmt_stack.addWidget(page_db)
+        phase_wrap_checkbox_hbox = QHBoxLayout()
+        self.checkbox_unwrap_phase = QCheckBox("Unwrap Phase")
+        phase_wrap_checkbox_hbox.addWidget(self.checkbox_unwrap_phase)
+        self.top.addLayout(phase_wrap_checkbox_hbox)
 
-        # 页 2：Phase ° / Rad
-        page_phase = QWidget()
-        lay = QGridLayout(page_phase)
-        self.sb_Ymax_ph = QSpinBox(); self.sb_Ymin_ph = QSpinBox(); self.checkbox_unwrap_phase = QCheckBox()
-        lay.addWidget(QLabel("Ymax"),0,0); lay.addWidget(self.sb_Ymax_ph,0,1)
-        lay.addWidget(QLabel("Ymin"),1,0); lay.addWidget(self.sb_Ymin_ph,1,1)
-        lay.addWidget(QLabel("Unwrap Phase"),2,0); lay.addWidget(self.checkbox_unwrap_phase,2,1)
-        self.fmt_stack.addWidget(page_phase)
-
-        # 信号
         self.lcb_fmt.currentTextChanged.connect(self._on_fmt_changed)
+        self._build_fmt_page()
     # ---------- 切换 Measurement ----------
     def _on_meas_changed(self):
         self._build_meas_page()
@@ -231,18 +192,16 @@ class TraceConfigWidget(QGroupBox):
 
     def _build_fmt_page(self):
         fmt = self.lcb_fmt.currentText()
-        if fmt in ("Mag", "Real", "Imaginary", "Tg"):
-            self.fmt_stack.setCurrentIndex(0)
-        elif fmt == "Mag(dB)":
-            self.fmt_stack.setCurrentIndex(1)
+        if fmt in ("Mag", "Real", "Imaginary", "Tg","Mag(dB)"):
+            self.checkbox_unwrap_phase.setVisible(False)
+            if self.unit_suffix_lineedit.text() in ("°", "Rad"):
+                self.unit_suffix_lineedit.setText("")
         elif fmt in ("Phase(°)", "Phase(Rad)"):
-            self.fmt_stack.setCurrentIndex(2)
             suffix = "°" if fmt == "Phase(°)" else "Rad"
-            self.sb_Ymax_ph.setSuffix(suffix)
-            self.sb_Ymin_ph.setSuffix(suffix)
-        else:  # Polar / Nyquist / Nichols
-            self.fmt_stack.setCurrentIndex(3)
-        # 2. 外部接口：返回当前配置
+            self.unit_suffix_lineedit.setText(suffix)
+            self.checkbox_unwrap_phase.setVisible(True)
+        else:
+            return
     
     def _on_any_change(self):
         self.trace_config_changed.emit(self.get_config())
@@ -255,16 +214,6 @@ class TraceConfigWidget(QGroupBox):
 
         # Format 下拉框
         self.lcb_fmt.currentTextChanged.connect(self._on_any_change)
-
-        # 第 0 页：Mag / Real / Imaginary / Tg
-        self.sb_Ymax_mag.valueChanged.connect(self._on_any_change)
-        self.sb_Ymin_mag.valueChanged.connect(self._on_any_change)
-        self.cb_scale_mag.currentTextChanged.connect(self._on_any_change)
-
-        # 第 1 页：Mag(dB)
-        self.sb_Ymax_db.valueChanged.connect(self._on_any_change)
-        self.sb_Ymin_db.valueChanged.connect(self._on_any_change)
-
-        # 第 2 页：Phase(°) / Phase(Rad)
-        self.sb_Ymax_ph.valueChanged.connect(self._on_any_change)
-        self.sb_Ymin_ph.valueChanged.connect(self._on_any_change)
+        self.lcb_x_axis_scale.currentTextChanged.connect(self._on_any_change)
+        self.unit_suffix_lineedit.textChanged.connect(self._on_any_change)
+        self.checkbox_unwrap_phase.stateChanged.connect(self._on_any_change)

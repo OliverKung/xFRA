@@ -85,11 +85,22 @@ class BodeAnalyzer(QMainWindow):
         self.plot.remove_trace(wave_key="1")
         for trace in self.trace_param.values():
             trace_data = self.xConv.apply_formula(self.s2pdata, trace['expression'])
-            self.plot.add_trace(
-                wave_key="1", 
-                name=trace['category']+'_'+trace['format'],
-                x_data=self.s2pdata['freq'],
-                y_data=trace_data)
+            if trace['meas_type'] == 'Meas':
+                self.plot.add_trace(
+                    wave_key="1", 
+                    name=trace['category']+'_'+trace['format'],
+                    x_data=self.s2pdata['freq'],
+                    y_data=trace_data,
+                    label=trace['category']+'_'+trace['format'],
+                    unit=trace['y_suffix'])
+            else:
+                self.plot.add_trace(
+                    wave_key="1", 
+                    name=trace['expression'],
+                    x_data=self.s2pdata['freq'],
+                    y_data=trace_data,
+                    label=trace['expression'],
+                    unit=trace['y_suffix'])
 
     def open_file(self):
         # open the file select and save the file path to self.file_path

@@ -163,7 +163,6 @@ class waveWidget(QtWidgets.QWidget):
         view_rect = self.pw.viewRect()
         x_pos = view_rect.right()
         y_pos = view_rect.top()
-        print(x_pos,y_pos)
         self.cursor_label.setPos(view_rect.bottomRight())
 
     # ---------------- cursor Label 可视化切换 ----------------
@@ -194,7 +193,6 @@ class waveWidget(QtWidgets.QWidget):
         y_max = np.max(all_y)
         x_min = np.min(self.freq)
         x_max = np.max(self.freq)
-        print(f"x: {x_min} to {x_max}, y: {y_min} to {y_max}")
         # ---------------- 设置视图范围 ----------------
         if self._freq_axis == 'log':
             x_min = np.log10(x_min)
