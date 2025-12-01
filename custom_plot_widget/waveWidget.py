@@ -163,8 +163,8 @@ class waveWidget(QtWidgets.QWidget):
         view_rect = self.pw.viewRect()
         x_pos = view_rect.right()
         y_pos = view_rect.top()
-        print(view_rect.topRight())
-        self.cursor_label.setPos(x_pos, y_pos)
+        print(x_pos,y_pos)
+        self.cursor_label.setPos(view_rect.bottomRight())
 
     # ---------------- cursor Label 可视化切换 ----------------
     def cursor_label_set_visible(self, visible: bool):
@@ -202,7 +202,7 @@ class waveWidget(QtWidgets.QWidget):
         else:
             pass
         self.pw.setXRange(x_min, x_max, padding=0.02)
-        self.pw.setYRange(y_min, y_max, padding=0.1)
+        self.pw.setYRange(y_min, y_max, padding=0.02)
 
     # ----------------- mouse 共同处理 ----------------
     def _mouse_common(self, pos):
