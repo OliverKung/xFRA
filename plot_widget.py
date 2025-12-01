@@ -1,6 +1,6 @@
 import pyqtgraph as pg
 import numpy as np
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QGridLayout
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor
 from custom_plot_widget.waveWidget import waveWidget
@@ -14,24 +14,24 @@ class PlotWidget(QWidget):
 
     # ---------- 构建 ----------
     def _build_ui(self):
-        layout = QVBoxLayout(self)
+        self.layout = QGridLayout(self)
 
         self.wave_widget = {}
 
         # 上方：Magnitude
-        self.wave_widget['1'] = waveWidget(freq_axis='log')
-        layout.addWidget(self.wave_widget['1'])
+        self.wave_widget['log_1'] = waveWidget(freq_axis='log')
+        self.layout.addWidget(self.wave_widget['log_1'])
     
 
         # 下方：Phase
     # ---------- 添加/删除 wave widget ----------
     def add_wave_widget(self, key, freq_axis='log'):
         self.wave_widget[key] = waveWidget(freq_axis=freq_axis)
-        self.layout().addWidget(self.wave_widget[key])
+        self.layout.addWidget(self.wave_widget[key])
     
     def del_wave_widget(self, key):
         if key in self.wave_widget:
-            self.layout().removeWidget(self.wave_widget[key])
+            self.layout.removeWidget(self.wave_widget[key])
             self.wave_widget[key].deleteLater()
             del self.wave_widget[key]
     # ---------- 指定waveWidget添加删除trace ----------

@@ -83,24 +83,52 @@ class BodeAnalyzer(QMainWindow):
         else:
             self.xConv.load_formulas(self.s2pdata, "xConv\\xConvFormulaDef.json")
         self.plot.remove_trace(wave_key="1")
+        log_idx = 0
+        lin_idx = 0
+        # 没想明白这里的逻辑，想明白了再来改
         for trace in self.trace_param.values():
             trace_data = self.xConv.apply_formula(self.s2pdata, trace['expression'])
-            if trace['meas_type'] == 'Meas':
-                self.plot.add_trace(
-                    wave_key="1", 
-                    name=trace['category']+'_'+trace['format'],
-                    x_data=self.s2pdata['freq'],
-                    y_data=trace_data,
-                    label=trace['category']+'_'+trace['format'],
-                    unit=trace['y_suffix'])
+            if trace['x_axis_scale'] == 'Log':
+                log_idx += 1
+                if trace['meas_type'] == 'Meas':
+                    self.plot.add_trace(
+                        wave_key="log_"+str(log_idx//2+1), 
+                        name=trace['category']+'_'+trace['format'],
+                        x_data=self.s2pdata['freq'],
+                        y_data=trace_data,
+                        label=trace['category']+'_'+trace['format'],
+                        unit=trace['y_suffix'])
+                else:
+                    self.plot.add_trace(
+                        wave_key="log_"+str(log_idx//2+1), 
+                        name=trace['expression'],
+                        x_data=self.s2pdata['freq'],
+                        y_data=trace_data,
+                        label=trace['expression'],
+                        unit=trace['y_suffix'])
+                if log_idx %2 ==0:
+                    self.plot.add_wave_widget(key="log_"+str(log_idx//2+1), freq_axis='log')
             else:
-                self.plot.add_trace(
-                    wave_key="1", 
-                    name=trace['expression'],
-                    x_data=self.s2pdata['freq'],
-                    y_data=trace_data,
-                    label=trace['expression'],
-                    unit=trace['y_suffix'])
+                lin_idx += 1
+                if trace['meas_type'] == 'Meas':
+                    self.plot.add_trace(
+                        wave_key="lin_"+str(lin_idx//2+1), 
+                        name=trace['category']+'_'+trace['format'],
+                        x_data=self.s2pdata['freq'],
+                        y_data=trace_data,
+                        label=trace['category']+'_'+trace['format'],
+                        unit=trace['y_suffix'])
+                else:
+                    self.plot.add_trace(
+                        wave_key="lin_"+str(lin_idx//2+1), 
+                        name=trace['expression'],
+                        x_data=self.s2pdata['freq'],
+                        y_data=trace_data,
+                        label=trace['expression'],
+                        unit=trace['y_suffix'])
+                if lin_idx%2 == 0:
+                    self.plot.add_wave_widget(key="lin_"+str(lin_idx//2+1), freq_axis='linear')
+
 
     def open_file(self):
         # open the file select and save the file path to self.file_path
@@ -127,7 +155,6 @@ class BodeAnalyzer(QMainWindow):
         # 控制面板改动 -> 刷新曲线
         self.trace.params_changed.connect(self.trace_params_changed)
         pass
-
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
