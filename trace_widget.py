@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import (QWidget, QGridLayout, QLabel, QSpinBox,
                              QCheckBox, QFrame, QSplitter, QScrollArea)
 from PyQt5.QtCore import pyqtSignal, Qt
 import math
-from basic_custom_widget.QDragGroupBox import DragWidget
+from basic_custom_widget.QDragGroupBox import DragWaveWidget
 
 
 class TraceWidget(QWidget):
@@ -23,7 +23,7 @@ class TraceWidget(QWidget):
         self.setMinimumWidth(470)
         layout = QVBoxLayout(self)
         scroll = QScrollArea(self)
-        self.dw = DragWidget()
+        self.dw = DragWaveWidget()
         self.dw.contentChanged.connect(self._notify)
         scroll.setWidget(self.dw)
         scroll.setWidgetResizable(True)

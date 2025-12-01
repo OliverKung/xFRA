@@ -88,6 +88,7 @@ class waveWidget(QtWidgets.QWidget):
 
         # 默认光标到第一个点
         self._set_cursor(1)
+        self.auto_range()
         self.cursor_label_position_update()
     
     # --------------- 删除指定trace ---------------
@@ -161,7 +162,8 @@ class waveWidget(QtWidgets.QWidget):
     def cursor_label_position_update(self):
         view_rect = self.pw.viewRect()
         x_pos = view_rect.right()
-        y_pos = view_rect.bottom()
+        y_pos = view_rect.top()
+        print(view_rect.topRight())
         self.cursor_label.setPos(x_pos, y_pos)
 
     # ---------------- cursor Label 可视化切换 ----------------

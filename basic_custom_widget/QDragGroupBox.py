@@ -132,7 +132,7 @@ class trace_config_GroupBox(QGroupBox):
 # --------------------------------------------------
 # 2. 容器：增删、拖拽排序、自动居中、统一信号
 # --------------------------------------------------
-class DragWidget(QWidget):
+class DragWaveWidget(QWidget):
     contentChanged = pyqtSignal(dict)
 
     def __init__(self, parent=None):
@@ -219,7 +219,7 @@ class Demo(QWidget):
         self.setWindowTitle('PyQt Trace 双拖拽触发+标题栏变色 完整示例')
         self.resize(700, 450)
         scroll = QScrollArea(self)
-        self.dw = DragWidget()
+        self.dw = DragWaveWidget()
         scroll.setWidget(self.dw)
         scroll.setWidgetResizable(True)
         main = QVBoxLayout(self)
