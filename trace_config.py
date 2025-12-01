@@ -76,6 +76,24 @@ class TraceConfigWidget(QGroupBox):
                 cfg["expression"] = "1/z11"
         else:
             pass  # 继续往下取参数
+        
+        format = self.lcb_fmt.currentText()
+        if format == "Mag":
+            cfg["expression"] = "abs({})".format(cfg["expression"])
+        elif format == "Mag(dB)":
+            cfg["expression"] = "20*log10(abs({}))".format(cfg["expression"])
+        elif format == "Phase(°)":
+            cfg["expression"] = "phase({})*180/pi".format(cfg["expression"])
+        elif format == "Phase(Rad)":
+            cfg["expression"] = "phase({})".format(cfg["expression"])
+        elif format == "Tg":
+            cfg["expression"] = "tan(phase({}))".format(cfg["expression"])
+        elif format == "Real":
+            cfg["expression"] = "real({})".format(cfg["expression"])
+        elif format == "Imag":
+            cfg["expression"] = "imag({})".format(cfg["expression"])
+        else:
+            pass  # Polar / Nyquist / Nichols 等等，暂不处理
 
         # ------- 底部动态页由 QStackedWidget 管理，按需取值 -------
         idx = self.fmt_stack.currentIndex()
