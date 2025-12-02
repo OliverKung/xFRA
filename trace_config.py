@@ -154,7 +154,7 @@ class TraceConfigWidget(QGroupBox):
         # 2. 底部动态：用 QStackedWidget 管理
         self.lcb_x_axis_scale = QLabelComboBox(
             label_text="X-axis Scale",
-            combo_items=["Linear", "Log"]
+            combo_items=["Log","Linear"]
         )
         self.top.addWidget(self.lcb_x_axis_scale)
 

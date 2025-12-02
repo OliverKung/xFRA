@@ -72,6 +72,19 @@ class waveWidget(QtWidgets.QWidget):
         else:
             pw.setLogMode(x=False, y=False)
 
+    # ---------------- 设置坐标轴题目 ----------------
+    def set_axis_labels(self, x_label: str, y_label: str):
+        self.pw.setLabel('bottom', x_label)
+        self.pw.setLabel('left', y_label)
+
+    # ----------------- 获取迹线名称列表 ----------------
+    def get_trace_names(self):
+        return list(self.traces.keys())
+
+    # ----------------- 获取当前迹线数量 ----------------
+    def get_trace_count(self):
+        return len(self.traces)
+
     # ---------------- 添加迹线 ----------------
     def add_trace(self,name, x_data, y_data, trace_color="#ff8c00",cursor_color='#ffeb3b', unit='dB',label=None):
         """freq: Hz, s21: 复数线性值"""

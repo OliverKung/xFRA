@@ -50,12 +50,15 @@ class PlotWidget(QWidget):
         if wave_key in self.wave_widget:
             self.wave_widget[wave_key].remove_trace(name)
 
+    def get_wave_widget_list(self):
+        return list(self.wave_widget.keys())
+
     # ---------- 设置指定waveWidget坐标类型 ----------
     def set_freq_axis(self, wave_key, freq_axis: str):
         if wave_key in self.wave_widget:
             self.wave_widget[wave_key].set_freq_axis(freq_axis)
 
-    
+
     # ---------- 刷新 ----------
     def replot(self, cfg: dict):
         reader = xConvS2PReader("data\\GRM0115C1C100GE01_DC0V_25degC.s2p")     # 你的文件路径

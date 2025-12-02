@@ -5,6 +5,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 
 #===============Ribbon Bar===============#
+from numpy import trace
 from pyqtribbon import RibbonBar
 
 #===============用户widget===============#
@@ -85,49 +86,37 @@ class BodeAnalyzer(QMainWindow):
         self.plot.remove_trace(wave_key="1")
         log_idx = 0
         lin_idx = 0
-        # 没想明白这里的逻辑，想明白了再来改
-        for trace in self.trace_param.values():
-            trace_data = self.xConv.apply_formula(self.s2pdata, trace['expression'])
-            if trace['x_axis_scale'] == 'Log':
+        
+        # 清空plot_widget中所有的waveWidget
+        for wave_key in self.plot.get_wave_widget_list():
+            self.plot.del_wave_widget(wave_key)
+        # 获取trace_param中的每一条trace信息，并按照x-axis类型添加到对应的waveWidget中
+        for trace_param in self.trace_param.values():
+            x_data = self.s2pdata['freq']
+            y_data = self.xConv.apply_formula(self.s2pdata, trace_param['expression'])
+            freq_axis = trace_param['x_axis_scale'].lower()
+            if freq_axis == 'log':
+                wave_key = f'log_{log_idx+1}'
+                if wave_key not in self.plot.get_wave_widget_list():
+                    self.plot.add_wave_widget(wave_key, freq_axis='log')
                 log_idx += 1
-                if trace['meas_type'] == 'Meas':
-                    self.plot.add_trace(
-                        wave_key="log_"+str(log_idx//2+1), 
-                        name=trace['category']+'_'+trace['format'],
-                        x_data=self.s2pdata['freq'],
-                        y_data=trace_data,
-                        label=trace['category']+'_'+trace['format'],
-                        unit=trace['y_suffix'])
-                else:
-                    self.plot.add_trace(
-                        wave_key="log_"+str(log_idx//2+1), 
-                        name=trace['expression'],
-                        x_data=self.s2pdata['freq'],
-                        y_data=trace_data,
-                        label=trace['expression'],
-                        unit=trace['y_suffix'])
-                if log_idx %2 ==0:
-                    self.plot.add_wave_widget(key="log_"+str(log_idx//2+1), freq_axis='log')
             else:
+                wave_key = f'lin_{lin_idx+1}'
+                if wave_key not in self.plot.get_wave_widget_list():
+                    self.plot.add_wave_widget(wave_key, freq_axis='lin')
                 lin_idx += 1
-                if trace['meas_type'] == 'Meas':
-                    self.plot.add_trace(
-                        wave_key="lin_"+str(lin_idx//2+1), 
-                        name=trace['category']+'_'+trace['format'],
-                        x_data=self.s2pdata['freq'],
-                        y_data=trace_data,
-                        label=trace['category']+'_'+trace['format'],
-                        unit=trace['y_suffix'])
-                else:
-                    self.plot.add_trace(
-                        wave_key="lin_"+str(lin_idx//2+1), 
-                        name=trace['expression'],
-                        x_data=self.s2pdata['freq'],
-                        y_data=trace_data,
-                        label=trace['expression'],
-                        unit=trace['y_suffix'])
-                if lin_idx%2 == 0:
-                    self.plot.add_wave_widget(key="lin_"+str(lin_idx//2+1), freq_axis='linear')
+            if trace_param['meas_type'] == 'Meas':
+                trace_name = trace_param['category']+"_"+trace_param['format']
+            else:
+                trace_name = trace_param['expression']
+            self.plot.add_trace(
+                wave_key=wave_key,
+                name=trace_name,
+                x_data=x_data,
+                y_data=y_data,
+                unit=trace_param['y_suffix'],
+                label=trace_name
+            )
 
 
     def open_file(self):
