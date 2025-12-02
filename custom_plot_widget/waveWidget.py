@@ -1,3 +1,5 @@
+import json
+import os
 import numpy as np
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtWidgets
@@ -46,7 +48,7 @@ class waveWidget(QtWidgets.QWidget):
         self.cursor_label = pg.TextItem(
             anchor=(1, 0), color='#ffeb3b', 
             border=pg.mkPen('#ffeb3b', width=0.5),
-            fill=pg.mkBrush('#161616')
+            fill=pg.mkBrush(self.style.get('waveWidget', {}).get('label', {}).get('background_color', '#161616'))
         )
         self.pw.addItem(self.cursor_label)
 
@@ -59,14 +61,22 @@ class waveWidget(QtWidgets.QWidget):
 
     # ---------------- 工具 ----------------
     def _style_plot(self, pw, xtxt, ytxt):
-        pw.setBackground('#161616')
+        style_path = os.path.join(os.path.dirname(__file__), 'style.json')
+        try:
+            with open(style_path, 'r') as f:
+                self.style = json.load(f)
+        except Exception as e:
+            print(f"Failed to load style.json: {e}")
+            self.style = {}
+
+        pw.setBackground(self.style.get('background', self.style.get('waveWidget', {}).get('background', '#222222')))
         for ax in ['bottom', 'left']:
-            pw.getAxis(ax).setPen(pg.mkPen('#999', width=0.5))
+            pw.getAxis(ax).setPen(pg.mkPen(self.style.get('waveWidget', {}).get('axis', {}).get('color', '#999999'), width=self.style.get('waveWidget', {}).get('axis', {}).get('width', 1)))
         pw.showAxis('top', False)
         pw.showAxis('right', False)
         pw.setLabel('bottom', xtxt)
         pw.setLabel('left', ytxt)
-        pw.showGrid(x=True, y=True, alpha=60)
+        pw.showGrid(x=True, y=True, alpha=self.style.get('waveWidget', {}).get('gridline', {}).get('alpha', 0.3))
         if self._freq_axis == 'log':
             pw.setLogMode(x=True, y=False)
         else:
@@ -90,13 +100,18 @@ class waveWidget(QtWidgets.QWidget):
         """freq: Hz, s21: 复数线性值"""
         self.freq = np.asarray(x_data, dtype=float)
         self.data[name] = np.asarray(y_data, dtype=float)
-        self.traces[name]=self.pw.plot(pen=pg.mkPen(trace_color, width=1.8), name=name)
+        self.traces[name]=self.pw.plot(pen=pg.mkPen(trace_color, width=self.style.get('waveWidget', {}).get('trace_width', 5)), name=name)
         self.traces[name].setData(self.freq, self.data[name])
         self.trace_cursor_hLines[name] = pg.InfiniteLine(angle=0, movable=False,
                                             pen=pg.mkPen(cursor_color, width=1.2))
         self.unit[name] = unit
         self.label[name] = label
         
+        if unit == "":
+            self.set_axis_labels('Frequency (Hz)', name)
+        else:
+            self.set_axis_labels('Frequency (Hz)', f"{name} ({unit})")
+
         self.pw.addItem(self.trace_cursor_hLines[name])
 
         # 默认光标到第一个点

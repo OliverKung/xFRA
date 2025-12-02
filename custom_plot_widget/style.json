@@ -1,0 +1,25 @@
+{
+    "waveWidget":
+    {
+        "background_color": "#161616",
+        "gridline":
+        {
+            "alpha": 0.3,
+            "width": 1,
+            "color": "#333333"
+        },
+        "axis":
+        {
+            "width": 1,
+            "color": "#999999"
+        },
+        "label":
+        {
+            "background_color": "#161616",
+            "color": "#ffffff",
+            "size": 12
+        },
+
+        "trace_width": 5
+    }
+}

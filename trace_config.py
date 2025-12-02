@@ -23,37 +23,6 @@ class TraceConfigWidget(QGroupBox):
         self._trace_list: List[str] = []
         self._init_ui()
 
-    # ------ 外部接口 ------
-    # ============================== TraceConfigWidget 新增 ==============================
-    def set_config(self, cfg: dict):
-        """
-        一键还原界面状态
-        参数cfg与get_config()返回格式完全一致
-        """
-        # 1. 顶部固定区
-        self.lcb_meas.setCurrentText(cfg.get("meas_type", "Measurement"))
-        self.lcb_category.setCurrentText(cfg.get("category", "Impedance"))
-        self.le_expression.setText(cfg.get("expression", ""))
-
-        # 2. Format 下拉框（会触发_on_fmt_changed，已自带）
-        self.lcb_fmt.setCurrentText(cfg.get("format", "Mag"))
-
-        # 3. 根据当前页把值刷进去
-        idx = self.fmt_stack.currentIndex()
-        if idx == 0:          # Mag / Real / Imaginary / Tg
-            self.sb_Ymax_mag.setValue(cfg.get("y_max", 0))
-            self.sb_Ymin_mag.setValue(cfg.get("y_min", 0))
-            self.cb_scale_mag.setCurrentText(cfg.get("y_axis_scale", "Linear"))
-        elif idx == 1:        # Mag(dB)
-            self.sb_Ymax_db.setValue(cfg.get("y_max", 0))
-            self.sb_Ymin_db.setValue(cfg.get("y_min", 0))
-        elif idx == 2:        # Phase
-            self.sb_Ymax_ph.setValue(cfg.get("y_max", 0))
-            self.sb_Ymin_ph.setValue(cfg.get("y_min", 0))
-
-        # 4. 统一发出一次信号，保证外部同步
-        self.trace_config_changed.emit(self.get_config())
-
     def get_config(self) -> Dict[str, Any]:
         # ---------- 外部接口：返回当前配置 ----------
         cfg = {

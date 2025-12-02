@@ -28,7 +28,8 @@ class trace_config_GroupBox(QGroupBox):
         self.setTitle(f'Trace {self.trace_id}')
 
         # 仅标题栏背景色
-        color = self.COLOR_TABLE[(self.trace_id - 1) % len(self.COLOR_TABLE)]
+        self.color = self.COLOR_TABLE[(self.trace_id - 1) % len(self.COLOR_TABLE)]
+        color = self.color
         self.setStyleSheet(f"""
         trace_config_GroupBox::title {{
             background-color: {color};
@@ -94,6 +95,7 @@ class trace_config_GroupBox(QGroupBox):
     # ---------- 内容 / 删除 / 动画 -----------------
     def get_content(self):
         self.param=self.trace_config.get_config()
+        self.param['color']=self.color
         return self.param
 
     def on_inner_changed(self, params: dict):
@@ -158,6 +160,8 @@ class DragWaveWidget(QWidget):
 
     def remove_box(self, box):
         self._lay.removeWidget(box)
+        self.trace_boxes.pop(box.trace_id, None)
+        box.deleted = True
         box.deleteLater()
         self._collect_and_emit()
 
@@ -206,6 +210,9 @@ class DragWaveWidget(QWidget):
     def get_all_content(self):
         data={}
         for idx, box in self.trace_boxes.items():
+            # 如果返回空字典，则说明已被删除，跳过
+            if box.get_content() == {}:
+                continue
             data[idx] = box.get_content()
         return data
 

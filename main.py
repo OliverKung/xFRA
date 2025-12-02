@@ -82,19 +82,23 @@ class BodeAnalyzer(QMainWindow):
             print("No data loaded yet.")
             return
         else:
-            self.xConv.load_formulas(self.s2pdata, "xConv\\xConvFormulaDef.json")
+            self.xConv.load_formulas(self.s2pdata, "xConv\\xConvFormulaDef.json") 
         self.plot.remove_trace(wave_key="1")
         log_idx = 0
         lin_idx = 0
         
         # 清空plot_widget中所有的waveWidget
-        for wave_key in self.plot.get_wave_widget_list():
-            self.plot.del_wave_widget(wave_key)
+        self.plot.del_all_wave_widget()
         # 获取trace_param中的每一条trace信息，并按照x-axis类型添加到对应的waveWidget中
         for trace_param in self.trace_param.values():
+            # 如果trace_param已被删除，则跳过
+            if trace_param.get('deleted', False):
+                continue
+            # 计算x_data和y_data
             x_data = self.s2pdata['freq']
             y_data = self.xConv.apply_formula(self.s2pdata, trace_param['expression'])
             freq_axis = trace_param['x_axis_scale'].lower()
+            # 根据坐标类型决定添加到哪个waveWidget
             if freq_axis == 'log':
                 wave_key = f'log_{log_idx+1}'
                 if wave_key not in self.plot.get_wave_widget_list():
@@ -109,13 +113,15 @@ class BodeAnalyzer(QMainWindow):
                 trace_name = trace_param['category']+"_"+trace_param['format']
             else:
                 trace_name = trace_param['expression']
+            # 添加trace到对应的waveWidget
             self.plot.add_trace(
                 wave_key=wave_key,
                 name=trace_name,
                 x_data=x_data,
                 y_data=y_data,
                 unit=trace_param['y_suffix'],
-                label=trace_name
+                label=trace_name,
+                trace_color=trace_param['color']
             )
 
     def open_file(self):

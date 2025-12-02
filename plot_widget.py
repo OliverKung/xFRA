@@ -17,23 +17,47 @@ class PlotWidget(QWidget):
         self.layout = QGridLayout(self)
 
         self.wave_widget = {}
+        self.wave_index = 0
 
         # 上方：Magnitude
         self.wave_widget['log_1'] = waveWidget(freq_axis='log')
-        self.layout.addWidget(self.wave_widget['log_1'])
+        self.layout.addWidget(self.wave_widget['log_1'], 0, 0)
     
 
         # 下方：Phase
     # ---------- 添加/删除 wave widget ----------
     def add_wave_widget(self, key, freq_axis='log'):
         self.wave_widget[key] = waveWidget(freq_axis=freq_axis)
-        self.layout.addWidget(self.wave_widget[key])
+        # 优先填充横轴，之后填充纵轴，自动扩充列
+        n = self.wave_index
+        max = np.floor(np.sqrt(n))
+        pos = n - max*max
+        if pos < max:
+            row = pos
+            col = max
+        elif pos < 2*max:
+            row = max
+            col = pos - max
+        else:
+            row = max
+            col = max
+        row  = int(row)
+        col = int(col)
+        self.wave_index += 1
+        self.layout.addWidget(self.wave_widget[key], row, col)
     
     def del_wave_widget(self, key):
         if key in self.wave_widget:
             self.layout.removeWidget(self.wave_widget[key])
             self.wave_widget[key].deleteLater()
             del self.wave_widget[key]
+    def del_all_wave_widget(self):
+        for key in list(self.wave_widget.keys()):
+            self.layout.removeWidget(self.wave_widget[key])
+            self.wave_widget[key].deleteLater()
+            del self.wave_widget[key]
+        self.wave_index=0
+        
     # ---------- 指定waveWidget添加删除trace ----------
     def add_trace(self, wave_key, name, x_data, y_data,
                   trace_color='#00bfff', unit='', label=''):
