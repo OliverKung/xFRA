@@ -54,15 +54,12 @@ class trace_config_GroupBox(QGroupBox):
         self.handle = QLabel("⋮⋮")
         self.handle.setCursor(Qt.OpenHandCursor)
 
-        # lay = QHBoxLayout()
-        # lay.addWidget(self.handle)
-        lay2 = QVBoxLayout()
-        lay2.addWidget(self.trace_config)
-        lay2.addWidget(self.btn_del)
-        # lay.addLayout(lay2)
+        lay = QVBoxLayout()
+        lay.addWidget(self.trace_config)
+        lay.addWidget(self.btn_del)
 
         container = QWidget()
-        container.setLayout(lay2)
+        container.setLayout(lay)
         outer = QVBoxLayout(self)
         outer.addWidget(container)
 
@@ -96,6 +93,7 @@ class trace_config_GroupBox(QGroupBox):
     def get_content(self):
         self.param=self.trace_config.get_config()
         self.param['color']=self.color
+        self.param['trace_id']=self.trace_id
         return self.param
 
     def on_inner_changed(self, params: dict):

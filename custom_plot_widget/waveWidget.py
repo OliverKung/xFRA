@@ -179,7 +179,7 @@ class waveWidget(QtWidgets.QWidget):
             self.cursor_label.setText("")
             return
         freq_hz = 10 ** freq
-        text = f"Freq: {freq_hz/1e6:.3f} MHz\n"
+        text = f"\nFreq: {freq_hz/1e6:.3f} MHz\n"
         for name, value in data_dict.items():
             unit = self.unit.get(name, '')
             label = self.label.get(name, name)
