@@ -17,7 +17,6 @@ from custom_ribbon_bar import customRibbonBar
 
 #===============加载xConv================#
 from xConv.xConv import xConvS2PReader, xConvFormulaTransformer
-import xConv.xConvSNPConverter as xConvSNPConv
 
 class BodeAnalyzer(QMainWindow):
     def __init__(self):
@@ -137,9 +136,11 @@ class BodeAnalyzer(QMainWindow):
             # 去除文件路径的拓展名
             base_path = os.path.splitext(self.file_path)[0]
             if not base_path.endswith('_RI'):
-                print("Converting file to RI format...")
+                print("Converting file to RI format using xConv...")
                 os.system('python ./xConv/xConvSNPConverter.py {}'.format(self.file_path))
-            reader = xConvS2PReader(base_path + '_RI.s2p')
+                reader = xConvS2PReader(base_path + '_RI.s2p')
+            else:
+                reader = xConvS2PReader(self.file_path)
             self.s2pdata = reader.read()
             print("Data loaded successfully")
         except Exception as e:
