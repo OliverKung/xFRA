@@ -118,7 +118,6 @@ class BodeAnalyzer(QMainWindow):
                 label=trace_name
             )
 
-
     def open_file(self):
         # open the file select and save the file path to self.file_path
         path, _ = QFileDialog.getOpenFileName(
