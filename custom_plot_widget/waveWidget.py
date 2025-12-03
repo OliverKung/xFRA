@@ -136,7 +136,10 @@ class waveWidget(QtWidgets.QWidget):
     def add_trace(self,name, x_data, y_data, trace_color="#ff8c00",cursor_color='#ffeb3b', unit='dB',label=None):
         """freq: Hz, s21: 复数线性值"""
         self.freq = np.asarray(x_data, dtype=float)
-        self.pw.getViewBox().setLimits(xMin=np.min(self.freq), xMax=np.max(self.freq))
+        if self._freq_axis == 'lin':
+            self.pw.getViewBox().setLimits(xMin=np.min(self.freq), xMax=np.max(self.freq))
+        elif self._freq_axis == 'log':
+            self.pw.getViewBox().setLimits(xMin=np.log10(np.min(self.freq)), xMax=np.log10(np.max(self.freq)))
         self.data[name] = np.asarray(y_data, dtype=float)
         self.traces[name]=self.pw.plot(pen=pg.mkPen(trace_color, width=self.style.get('waveWidget', {}).get('trace_width', 5)), name=name)
         self.traces[name].setData(self.freq, self.data[name])

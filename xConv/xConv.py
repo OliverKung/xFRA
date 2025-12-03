@@ -86,6 +86,7 @@ class xConvS2PReader:
             'MHZ': 1e6,
             'GHZ': 1e9
         }
+        print(f"Detected frequency unit: {self.freq_unit}")
         if self.freq_unit in unit_multiplier:
             freq *= unit_multiplier[self.freq_unit]
         
