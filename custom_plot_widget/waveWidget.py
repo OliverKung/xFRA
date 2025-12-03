@@ -26,6 +26,8 @@ class waveWidget(QtWidgets.QWidget):
         self.unit = {}   # name -> unit string
         self.label = {}  # name -> label string
 
+        self.y_min = float('inf')
+        self.y_max = float('-inf')
         # ---- 基本状态变量 ---- #
         self.trace_cursor_visible = True
 
@@ -40,7 +42,11 @@ class waveWidget(QtWidgets.QWidget):
         self.vLine = pg.InfiniteLine(angle=90, movable=False,
                                          pen=pg.mkPen('#ffeb3b', width=1.2))
         self.pw.addItem(self.vLine)
-        self.pw.getViewBox().setMouseEnabled(x=True, y=False)
+        self.pw.getViewBox().setMouseEnabled(x=True, y=True)
+        # 设置鼠标滚轮事件为重写的wheelEvent方法
+        self.pw.wheelEvent = self.wheelEvent
+        # self.pw.getViewBox().wheelEvent = lambda ev: pg.ViewBox.wheelEvent(
+        #     self.pw.getViewBox(), ev) if ev.modifiers() & (QtCore.Qt.ShiftModifier | QtCore.Qt.ControlModifier) else None
 
         self.lay.addWidget(self.pw)
 
@@ -58,6 +64,26 @@ class waveWidget(QtWidgets.QWidget):
         # ---- 鼠标联动 ----
         self.proxy_amp = pg.SignalProxy(self.pw.scene().sigMouseMoved,
                                         rateLimit=60, slot=self._mouse_moved)
+
+    # ---------------- 重写鼠标滚轮事件，实现按下shift滚轮时缩放x轴，按下ctrl滚轮时缩放y轴，未按下时滚轮仅移动x轴 ----------------
+    def wheelEvent(self, ev):
+        # 滚轮角度 -> 缩放因子
+        delta = ev.angleDelta().y()
+        factor = 1.1 if delta < 0 else 1 / 1.1
+
+        # 当前轴范围
+        x_range, y_range = self.pw.getViewBox().viewRange()
+
+        if ev.modifiers() & QtCore.Qt.ControlModifier:     # 按住 Ctrl → 仅 Y 轴
+            self.pw.getViewBox().setYRange(y_range[0] * factor,
+                           y_range[1] * factor,
+                           padding=0)
+        elif ev.modifiers() & QtCore.Qt.ShiftModifier:     # 按住 Shift → 仅 X 轴
+            self.pw.getViewBox().setXRange(x_range[0] * factor,
+                           x_range[1] * factor,
+                           padding=0)
+        else:                                              # 无修饰键 → 默认行为
+            super().wheelEvent(ev)
 
     # ---------------- 工具 ----------------
     def _style_plot(self, pw, xtxt, ytxt):
@@ -99,6 +125,7 @@ class waveWidget(QtWidgets.QWidget):
     def add_trace(self,name, x_data, y_data, trace_color="#ff8c00",cursor_color='#ffeb3b', unit='dB',label=None):
         """freq: Hz, s21: 复数线性值"""
         self.freq = np.asarray(x_data, dtype=float)
+        self.pw.getViewBox().setLimits(xMin=np.min(self.freq), xMax=np.max(self.freq))
         self.data[name] = np.asarray(y_data, dtype=float)
         self.traces[name]=self.pw.plot(pen=pg.mkPen(trace_color, width=self.style.get('waveWidget', {}).get('trace_width', 5)), name=name)
         self.traces[name].setData(self.freq, self.data[name])
@@ -106,6 +133,10 @@ class waveWidget(QtWidgets.QWidget):
                                             pen=pg.mkPen(cursor_color, width=1.2))
         self.unit[name] = unit
         self.label[name] = label
+        # 获取所有数据中数据最大值和最小值，并更新viewBox的y范围限制
+        self.y_min = self.y_min if np.min(self.data[name]) > self.y_min else np.min(self.data[name])
+        self.y_max = np.max(self.data[name]) if np.max(self.data[name]) > self.y_max else self.y_max
+        self.pw.getViewBox().setLimits(yMin=self.y_min - abs(0.1 * (self.y_max-self.y_min)), yMax=self.y_max + abs(0.1 * (self.y_max-self.y_min)))
         
         if unit == "":
             self.set_axis_labels('Frequency (Hz)', name)
@@ -209,8 +240,6 @@ class waveWidget(QtWidgets.QWidget):
         elif name in self.trace_cursor_hLines:
             self.trace_cursor_hLines[name].setVisible(visible)
 
-
-
     # ----------------- 自动缩放 ----------------
     def auto_range(self):
         # ---------------- 获取所有数据的x和y的范围 ----------------
@@ -228,7 +257,7 @@ class waveWidget(QtWidgets.QWidget):
         else:
             pass
         self.pw.setXRange(x_min, x_max, padding=0.02)
-        self.pw.setYRange(y_min, y_max, padding=0.02)
+        self.pw.setYRange(y_min, y_max, padding=0.1)
 
     # ----------------- mouse 共同处理 ----------------
     def _mouse_common(self, pos):
@@ -247,3 +276,4 @@ class waveWidget(QtWidgets.QWidget):
             idx = int(np.argmin(np.abs(self.freq - x)))
         self._set_cursor(idx)
         self.cursor_label_update(np.log10(self.freq[idx]), {name: self.data[name][idx] for name in self.data})
+        self.cursor_label_position_update()
