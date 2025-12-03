@@ -30,6 +30,7 @@ class waveWidget(QtWidgets.QWidget):
         self.y_max = float('-inf')
         # ---- 基本状态变量 ---- #
         self.trace_cursor_visible = True
+        self.trace_cursor_freeze = False
 
         # ---- 布局 ----
         self.lay = QtWidgets.QVBoxLayout(self)
@@ -64,6 +65,16 @@ class waveWidget(QtWidgets.QWidget):
         # ---- 鼠标联动 ----
         self.proxy_amp = pg.SignalProxy(self.pw.scene().sigMouseMoved,
                                         rateLimit=60, slot=self._mouse_moved)
+        
+        # ---- 鼠标双击事件 ----
+        self.pw.scene().sigMouseClicked.connect(self._mouse_clicked)
+
+    # ---------------- 鼠标双击事件 ----------------
+    def _mouse_clicked(self, evt):
+        # 鼠标双击切换光标随动与否
+        if evt.double():
+            self.trace_cursor_freeze = not self.trace_cursor_freeze
+
 
     # ---------------- 重写鼠标滚轮事件，实现按下shift滚轮时缩放x轴，按下ctrl滚轮时缩放y轴，未按下时滚轮仅移动x轴 ----------------
     def wheelEvent(self, ev):
@@ -274,6 +285,9 @@ class waveWidget(QtWidgets.QWidget):
             idx = int(np.argmin(np.abs(np.log10(self.freq) - x)))
         else:
             idx = int(np.argmin(np.abs(self.freq - x)))
-        self._set_cursor(idx)
-        self.cursor_label_update(np.log10(self.freq[idx]), {name: self.data[name][idx] for name in self.data})
-        self.cursor_label_position_update()
+        if not self.trace_cursor_freeze:
+            self._set_cursor(idx)
+            self.cursor_label_update(np.log10(self.freq[idx]), {name: self.data[name][idx] for name in self.data})
+            self.cursor_label_position_update()
+        else:
+            pass
