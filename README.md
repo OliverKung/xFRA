@@ -11,8 +11,8 @@ GUI（xFRA）基于PyQt编写。
 ## To Do List
 ### xFRA
 - [x] GUI界面完全参考
-- [ ] GUI导入数据绘制
-- [ ] GUI提供数据游标
+- [X] GUI导入数据绘制
+- [X] GUI提供数据游标
 ### xConv
 - [X] 读取并解析S2P文件
 - [X] 对任意公式进行解析

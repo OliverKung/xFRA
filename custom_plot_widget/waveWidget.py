@@ -84,14 +84,20 @@ class waveWidget(QtWidgets.QWidget):
 
         # 当前轴范围
         x_range, y_range = self.pw.getViewBox().viewRange()
+        # 获得当前鼠标的x坐标
+        mouse_point = self.pw.plotItem.vb.mapSceneToView(ev.pos())
+        x_mouse = mouse_point.x()
+        y_mouse = mouse_point.y()
 
         if ev.modifiers() & QtCore.Qt.ControlModifier:     # 按住 Ctrl → 仅 Y 轴
-            self.pw.getViewBox().setYRange(y_range[0] * factor,
-                           y_range[1] * factor,
+            # 以鼠标的y坐标为中心缩放
+            self.pw.getViewBox().setYRange(y_mouse - (y_mouse - y_range[0]) * factor,
+                           y_mouse + (y_range[1] - y_mouse) * factor,
                            padding=0)
         elif ev.modifiers() & QtCore.Qt.ShiftModifier:     # 按住 Shift → 仅 X 轴
-            self.pw.getViewBox().setXRange(x_range[0] * factor,
-                           x_range[1] * factor,
+            # 以鼠标的x坐标为中心缩放
+            self.pw.getViewBox().setXRange(x_mouse - (x_mouse - x_range[0]) * factor,
+                           x_mouse + (x_range[1] - x_mouse) * factor,
                            padding=0)
         else:                                              # 无修饰键 → 默认行为
             super().wheelEvent(ev)

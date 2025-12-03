@@ -10,8 +10,8 @@ The instrument communication layer (xDriver) provides a universal conversion lay
 ## To Do List
 ### xFRA
 - [x] Complete GUI reference design
-- [ ] GUI data import and plotting
-- [ ] GUI data cursors
+- [X] GUI data import and plotting
+- [X] GUI data cursors
 ### xConv
 - [X] Read and parse S2P files
 - [X] Parse arbitrary formulas
