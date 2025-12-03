@@ -21,3 +21,5 @@ The instrument communication layer (xDriver) provides a universal conversion lay
 - [ ] Driver for NanoVNA
 - [ ] Driver for SVA1000X
 - [ ] Driver for OSC+AFG
+## Update Log 
+December 3, 2025: Milestone - Completed most of the xConv and GUI functionalities; began xDriver development.

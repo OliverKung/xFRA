@@ -22,3 +22,5 @@ GUI（xFRA）基于PyQt编写。
 - [ ] Driver for NanoVNA
 - [ ] Driver for SVA1000X
 - [ ] Driver for OSC+AFG
+## update log
+2025年12月3日：里程碑，完成了大多数的xConv功能和GUI功能的开发，开始进行xDriver的开发
