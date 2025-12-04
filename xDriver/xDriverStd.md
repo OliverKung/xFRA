@@ -18,3 +18,4 @@
 - calibration 校准文件路径
 
 ## Excitation-Measurement Class（E-M类）
+python xDriver.py --device-type tcp --device-address 192.168.1.119 --averages 1 --start-freq 1000000 --stop-freq 1000000000 --sweep-type log --sweep-points 101 --ifbw 1000 --source-level -10 --output-file measurement.s2p

@@ -1,294 +1,222 @@
+# xDrviver/VNA_Class/SVA1000X.py
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-xDriver.py - VNA自动化测量工具
-支持Siglent VNA设备的远程控制，测量双端口网络S参数并输出s2p文件
-"""
+# device-type VNA
+# model SVA1000X
+# tunnel VISA socket
+# average support
+# start-freq 1000000
+# end-freq 1500000000
+# sweep-type LIN LOG
+# sweep-points 101 201 301 401 501
+# ifbw 1000 3000 10000 30000 100000
+# variable-amp reserved
+# source-level -30 -20 -10 -5 0 5 10
 
 import argparse
-import socket
-import time
-import numpy as np
-from datetime import datetime
 import sys
+import time
+import pyvisa
+import struct
 
-class VNAController:
-    def __init__(self, device_type, tunnel, address):
-        """
-        初始化VNA控制器
-        
-        Args:
-            device_type: 设备类型 ('tcp' 或 'usb')
-            tunnel: 连接隧道类型
-            address: 设备地址 (IP地址或USB地址)
-        """
-        self.device_type = device_type
-        self.tunnel = tunnel
-        self.address = address
-        self.socket = None
-        self.is_connected = False
-        
-    def connect(self):
-        """建立与VNA设备的连接"""
-        try:
-            if self.device_type == 'tcp':
-                self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self.socket.connect((self.address, 5025))  # 默认端口5025
-                self.socket.settimeout(10)
-            else:
-                # USB连接可以通过VISA或socket实现
-                print(f"USB连接方式: {self.address}")
-                return False
-                
-            self.is_connected = True
-            print(f"成功连接到设备: {self.address}")
-            return True
-            
-        except Exception as e:
-            print(f"连接失败: {str(e)}")
-            return False
-    
-    def send_command(self, cmd):
-        """发送SCPI命令到设备"""
-        if not self.is_connected:
-            print("设备未连接")
-            return None
-            
-        try:
-            if self.device_type == 'tcp':
-                self.socket.send((cmd + '\n').encode())
-                time.sleep(0.1)
-                
-                # 读取响应
-                response = self.socket.recv(4096).decode().strip()
-                return response
-            else:
-                print("USB命令发送未实现")
-                return None
-                
-        except Exception as e:
-            print(f"命令发送失败: {str(e)}")
-            return None
-    
-    def configure_measurement(self, args):
-        """配置VNA测量参数"""
-        print("开始配置测量参数...")
-        
-        # 设置测量模式为双端口S参数
-        self.send_command(":CALCulate1:PARameter:COUNt 4")  # 4个S参数
-        self.send_command(":CALCulate1:PARameter1:DEFine S11")
-        self.send_command(":CALCulate1:PARameter2:DEFine S21")
-        self.send_command(":CALCulate1:PARameter3:DEFine S12")
-        self.send_command(":CALCulate1:PARameter4:DEFine S22")
-        
-        # 设置频率范围
-        self.send_command(f":SENSe1:FREQuency:STARt {args.start_freq}")
-        self.send_command(f":SENSe1:FREQuency:STOP {args.stop_freq}")
-        
-        # 设置扫描点数
-        self.send_command(f":SENSe1:SWEep:POINts {args.sweep_points}")
-        
-        # 设置中频带宽
-        self.send_command(f":SENSe1:BWIDth {args.ifbw}")
-        
-        # 设置扫描类型
-        if args.sweep_type == 'linear':
-            self.send_command(":SENSe1:SWEep:TYPE LINEAR")
-        elif args.sweep_type == 'log':
-            self.send_command(":SENSe1:SWEep:TYPE LOGarithmic")
-        
-        # 设置源功率电平
-        self.send_command(f":SOURce1:POWer {args.source_level}")
-        
-        # 设置平均次数
-        self.send_command(f":SENSe1:AVERage:COUNt {args.averages}")
-        if args.averages > 1:
-            self.send_command(":SENSe1:AVERage:STATe ON")
-        
-        print("测量参数配置完成")
-    
-    def load_calibration(self, cal_file):
-        """加载校准文件"""
-        if cal_file:
-            print(f"加载校准文件: {cal_file}")
-            # 这里可以实现校准文件加载逻辑
-            # self.send_command(f":MMEMory:LOAD CORRection, '{cal_file}'")
-    
-    def perform_measurement(self):
-        """执行测量并获取数据"""
-        print("开始执行测量...")
-        
-        # 触发单次扫描
-        self.send_command(":INITiate1:IMMediate")
-        
-        # 等待测量完成
-        time.sleep(2)  # 根据测量参数调整等待时间
-        
-        # 获取频率数据
-        freq_data = self.send_command(":SENSe1:FREQuency:DATA?")
-        
-        # 获取各S参数数据
-        s_params = {}
-        
-        # 选择每个参数并获取数据
-        for i, param in enumerate(['S11', 'S21', 'S12', 'S22'], 1):
-            self.send_command(f":CALCulate1:PARameter{i}:SELect")
-            
-            # 获取格式化数据 (实部和虚部)
-            data = self.send_command(":CALCulate1:SELected:DATA:FDATa?")
-            if data:
-                # 解析数据 (格式: 实部1,虚部1,实部2,虚部2,...)
-                values = [float(x) for x in data.split(',')]
-                
-                # 转换为复数形式
-                complex_data = []
-                for j in range(0, len(values), 2):
-                    real_part = values[j]
-                    imag_part = values[j+1]
-                    complex_data.append(complex(real_part, imag_part))
-                
-                s_params[param] = np.array(complex_data)
-        
-        # 解析频率数据
-        if freq_data:
-            frequencies = [float(f) for f in freq_data.split(',')]
-        else:
-            # 如果没有频率数据，生成默认频率点
-            num_points = len(s_params['S11'])
-            start_freq = float(self.send_command(":SENSe1:FREQuency:STARt?"))
-            stop_freq = float(self.send_command(":SENSe1:FREQuency:STOP?"))
-            frequencies = np.linspace(start_freq, stop_freq, num_points)
-        
-        return frequencies, s_params
-    
-    def close(self):
-        """关闭连接"""
-        if self.socket:
-            self.socket.close()
-            self.is_connected = False
-            print("设备连接已关闭")
+def parse_arguments():
+    parser = argparse.ArgumentParser(description="Siglent VNA S2P Measurement Driver")
+    parser.add_argument("--device-type", default="SVA1000X", help="Device model type")
+    parser.add_argument("--device-tunnel", default="VISA", help="Connection tunnel type")
+    parser.add_argument("--device-address", required=True, help="VISA Resource Address (e.g., TCPIP0::192.168.1.100::INSTR)")
+    parser.add_argument("--averages", type=int, default=1, help="Number of averages")
+    parser.add_argument("--start-freq", type=float, required=True, help="Start frequency in Hz")
+    parser.add_argument("--stop-freq", type=float, required=True, help="Stop frequency in Hz")
+    parser.add_argument("--sweep-type", default="LIN", choices=["LIN", "LOG"], help="Sweep type (Linear/Log)")
+    parser.add_argument("--sweep-points", type=int, default=201, help="Number of sweep points")
+    parser.add_argument("--ifbw", type=float, default=10000, help="IF Bandwidth in Hz")
+    parser.add_argument("--variable-amp", help="Variable amplifier setting (reserved)")
+    parser.add_argument("--source-level", type=float, default=-5.0, help="Source power level in dBm")
+    parser.add_argument("--calibration", help="Filename of local calibration file to load (e.g., 'cal.cor')")
+    parser.add_argument("--output-file", required=True, help="Output filename for .s2p data")
+    return parser.parse_args()
 
-class S2PWriter:
-    """s2p文件写入器"""
+def configure_instrument(inst, args):
+    # 1. Reset and Identification
+    inst.write("*CLS")
+    idn = inst.query("*IDN?")
+    print(f"Connected to: {idn.strip()}")
+
+    # [cite_start]2. Set Mode to VNA [cite: 295]
+    print("Setting mode to VNA...")
+    inst.write(":INSTrument:SELect VNA")
+    time.sleep(3) # Allow time for mode switch
+
+    # 3. Frequency Configuration
+    # [cite_start]Set Start Frequency [cite: 481]
+    inst.write(f":SENSe1:FREQuency:STARt {args.start_freq}")
+    # [cite_start]Set Stop Frequency [cite: 482]
+    inst.write(f":SENSe1:FREQuency:STOP {args.stop_freq}")
     
-    def __init__(self, filename):
-        self.filename = filename
+    # 4. Bandwidth and Power
+    # Set IF Bandwidth. [cite_start]Note: Manual section 5.3.1 implies query, but typically setting follows same syntax[cite: 489].
+    # Using specific command structure for VNA mode if standard BWIDth is ambiguous.
+    inst.write(f":SENSe1:BWIDth:RESolution {args.ifbw}")
     
-    def write(self, frequencies, s_params, args):
-        """写入s2p格式文件"""
-        try:
-            with open(self.filename, 'w') as f:
-                # 写入文件头
-                f.write("# Hz S RI R 50\n")  # 频率单位Hz, S参数, 实部/虚部格式, 参考阻抗50Ω
-                f.write(f"# Generated by xDriver on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-                f.write(f"# Start Frequency: {args.start_freq} Hz\n")
-                f.write(f"# Stop Frequency: {args.stop_freq} Hz\n")
-                f.write(f"# Points: {len(frequencies)}\n")
-                f.write(f"# IFBW: {args.ifbw} Hz\n")
-                f.write(f"# Power: {args.source_level} dBm\n")
-                f.write("!\n")  # 选项行结束符
-                
-                # 写入数据
-                for i, freq in enumerate(frequencies):
-                    s11 = s_params['S11'][i]
-                    s21 = s_params['S21'][i]
-                    s12 = s_params['S12'][i]
-                    s22 = s_params['S22'][i]
-                    
-                    # 格式: 频率 S11实部 S11虚部 S21实部 S21虚部 S12实部 S12虚部 S22实部 S22虚部
-                    f.write(f"{freq:.6e} {s11.real:.6e} {s11.imag:.6e} "
-                           f"{s21.real:.6e} {s21.imag:.6e} "
-                           f"{s12.real:.6e} {s12.imag:.6e} "
-                           f"{s22.real:.6e} {s22.imag:.6e}\n")
+    # [cite_start]Set Source Power [cite: 493]
+    inst.write(f":SOURce1:POWer:LEVel:IMMediate:AMPLitude {args.source_level}")
+
+    # 5. Sweep Configuration
+    # [cite_start]Set Sweep Points [cite: 491]
+    inst.write(f":SENSe1:SWEep:POINts {args.sweep_points}")
+    
+    # 6. Averaging Configuration
+    if args.averages > 1:
+        # [cite_start]Set Average Count [cite: 506]
+        inst.write(f":SENSe1:AVERage:COUNt {args.averages}")
+        # [cite_start]Enable Averaging [cite: 507]
+        inst.write(":SENSe1:AVERage:STATe ON")
+    else:
+        inst.write(":SENSe1:AVERage:STATe OFF")
+
+    # 7. Calibration Loading (if requested)
+    if args.calibration:
+        print(f"Loading calibration: {args.calibration}")
+        # [cite_start]Load COR file [cite: 289]
+        inst.write(f":MMEMory:LOAD COR, \"{args.calibration}\"")
+        # [cite_start]Apply calibration [cite: 537]
+        inst.write(":CORRection:COLLect:SAVE")
+
+    # 8. Configure Traces for S-Parameters (S11, S21, S12, S22)
+    # [cite_start]We need 4 traces to capture all S-parameters for s2p [cite: 495]
+    inst.write(":CALCulate1:PARameter:COUNt 4")
+
+    # [cite_start]Define parameters for traces [cite: 523]
+    # Trace 1 -> S11
+    inst.write(":CALCulate1:PARameter1:DEFine S11")
+    # Trace 2 -> S21
+    inst.write(":CALCulate1:PARameter2:DEFine S21")
+    # Trace 3 -> S21
+    inst.write(":CALCulate1:PARameter3:DEFine S21")
+    # Trace 4 -> S11
+    inst.write(":CALCulate1:PARameter4:DEFine S11")
+
+    # [cite_start]Set Format to Real/Imag for data extraction [cite: 524]
+    # SCOMplex returns Real and Imaginary parts, which is ideal for S2P generation
+    for i in range(1, 5):
+        inst.write(f":CALCulate1:PARameter{i}:SELect")
+        inst.write(":CALCulate1:SELected:FORMat SCOMplex")
+
+def perform_measurement(inst):
+    print("Performing measurement...")
+    # [cite_start]Set to Single Sweep Mode [cite: 492]
+    inst.write(":INITiate1:CONTinuous OFF")
+    
+    # [cite_start]Trigger Sweep [cite: 491]
+    inst.write(":INITiate1:IMMediate")
+    
+    # [cite_start]Wait for operation complete [cite: 270]
+    inst.query("*OPC?")
+
+def retrieve_data(inst):
+    print("Retrieving trace data...")
+    s_params = {}
+    
+    # Map trace indices to S-parameters
+    trace_map = {1: 's11', 2: 's21', 3: 's12', 4: 's22'}
+
+    for trace_idx, s_name in trace_map.items():
+        # [cite_start]Select the trace [cite: 494]
+        inst.write(f":CALCulate1:PARameter{trace_idx}:SELect")
+        
+        # [cite_start]Query Formatted Data (Real, Imag pairs) [cite: 501]
+        # Using query_ascii_values to handle the comma-separated string automatically
+        data = inst.query_ascii_values(":CALCulate1:SELected:DATA:FDATa?")
+        s_params[s_name] = data
+        
+    return s_params
+
+def write_s2p(filename, freqs, s_data):
+    print(f"Exporting to {filename}...")
+    with open(filename, 'w') as f:
+        # Header
+        f.write("! Touchstone file generated by xDriver.py\n")
+        f.write("# Hz S RI R 50\n")
+        f.write("! Freq ReS11 ImS11 ReS21 ImS21 ReS12 ImS12 ReS22 ImS22\n")
+
+        num_points = len(freqs)
+        
+        # Iterate through points
+        # Note: s_data contains flat lists [Re1, Im1, Re2, Im2...]
+        for i in range(num_points):
+            idx = i * 2
+            line = f"{freqs[i]:.6e} "
             
-            print(f"s2p文件已成功写入: {self.filename}")
+            # S11 (Re, Im)
+            line += f"{s_data['s11'][idx]:.6f} {s_data['s11'][idx+1]:.6f} "
+            # S21 (Re, Im)
+            line += f"{s_data['s21'][idx]:.6f} {s_data['s21'][idx+1]:.6f} "
+            # S12 (Re, Im)
+            line += f"{s_data['s12'][idx]:.6f} {s_data['s12'][idx+1]:.6f} "
+            # S22 (Re, Im)
+            line += f"{s_data['s22'][idx]:.6f} {s_data['s22'][idx+1]:.6f}"
             
-        except Exception as e:
-            print(f"写入s2p文件失败: {str(e)}")
-            raise
+            f.write(line + "\n")
 
 def main():
-    parser = argparse.ArgumentParser(description='VNA自动化测量工具')
-    
-    # 设备连接参数
-    parser.add_argument('--device-type', required=True, choices=['tcp', 'usb'],
-                       help='设备连接类型 (tcp 或 usb)')
-    parser.add_argument('--device-tunnel', default='socket',
-                       help='设备隧道类型')
-    parser.add_argument('--device-address', required=True,
-                       help='设备地址 (IP地址或USB地址)')
-    
-    # 测量参数
-    parser.add_argument('--averages', type=int, default=1,
-                       help='平均次数 (默认: 1)')
-    parser.add_argument('--start-freq', type=float, required=True,
-                       help='起始频率 (Hz)')
-    parser.add_argument('--stop-freq', type=float, required=True,
-                       help='终止频率 (Hz)')
-    parser.add_argument('--sweep-type', choices=['linear', 'log'], default='linear',
-                       help='扫描类型 (默认: linear)')
-    parser.add_argument('--sweep-points', type=int, default=1601,
-                       help='扫描点数 (默认: 1601)')
-    parser.add_argument('--ifbw', type=float, default=1000,
-                       help='中频带宽 (Hz, 默认: 1000)')
-    parser.add_argument('--variable-amp', action='store_true',
-                       help='启用可变幅度')
-    parser.add_argument('--source-level', type=float, default=-10,
-                       help='源功率电平 (dBm, 默认: -10)')
-    
-    # 校准和输出
-    parser.add_argument('--calibration-file', type=str,
-                       help='校准文件路径')
-    parser.add_argument('--output-file', required=True,
-                       help='输出s2p文件路径')
-    
-    args = parser.parse_args()
-    
-    # 验证参数
-    if args.start_freq >= args.stop_freq:
-        print("错误: 起始频率必须小于终止频率")
-        sys.exit(1)
-    
-    if args.averages < 1:
-        print("错误: 平均次数必须大于0")
-        sys.exit(1)
-    
-    # 创建VNA控制器
-    vna = VNAController(args.device_type, args.device_tunnel, args.device_address)
-    
+    args = parse_arguments()
+    rm = pyvisa.ResourceManager()
+
     try:
-        # 连接设备
-        if not vna.connect():
-            print("无法连接到设备，程序退出")
-            sys.exit(1)
+        inst = rm.open_resource(args.device_address)
+        # Increase timeout for slow sweeps/averaging
+        inst.timeout = 20000 
         
-        # 查询设备信息
-        idn = vna.send_command("*IDN?")
-        print(f"设备信息: {idn}")
+        configure_instrument(inst, args)
         
-        # 配置测量
-        vna.configure_measurement(args)
+        if args.averages > 1:
+            s_data_bf = {}
+            for i in range(args.averages):
+                print(f"Acquisition {i+1} of {args.averages}...")
+                perform_measurement(inst)
+                s_data = retrieve_data(inst)
+                # 累加s_data到s_data_bf
+                for k in s_data:
+                    if k not in s_data_bf:
+                        s_data_bf[k] = s_data[k]
+                    else:
+                        s_data_bf[k] = [s_data_bf[k][j] + s_data[k][j] for j in range(len(s_data[k]))]
+            s_data = {k: [v / args.averages for v in s_data_bf[k]] for k in s_data_bf}
+        else:
+            perform_measurement(inst)
+            s_data = retrieve_data(inst)
+
+        # Generate Frequency List (Linear)
+        freqs = []
+        if args.sweep_type == "LIN":
+            if args.sweep_points > 1:
+                step = (args.stop_freq - args.start_freq) / (args.sweep_points - 1)
+                freqs = [args.start_freq + i * step for i in range(args.sweep_points)]
+            else:
+                freqs = [args.start_freq]
+        else:
+            # Generate Logarithmic frequency list
+            if args.sweep_points > 1:
+                import numpy as np
+                freqs = np.logspace(np.log10(args.start_freq), np.log10(args.stop_freq), args.sweep_points).tolist()
+            else:
+                freqs = [args.start_freq]
+
+        write_s2p(args.output_file, freqs, s_data)
         
-        # 加载校准（如果提供）
-        if args.calibration_file:
-            vna.load_calibration(args.calibration_file)
+        # Restore Continuous Sweep
+        inst.write(":INITiate1:CONTinuous ON")
         
-        # 执行测量
-        frequencies, s_params = vna.perform_measurement()
-        
-        # 写入s2p文件
-        writer = S2PWriter(args.output_file)
-        writer.write(frequencies, s_params, args)
-        
-        print("测量完成！")
-        
-    except KeyboardInterrupt:
-        print("\n用户中断测量")
+        print("Done.")
+
     except Exception as e:
-        print(f"测量过程中发生错误: {str(e)}")
+        print(f"Error: {e}")
         sys.exit(1)
     finally:
-        vna.close()
+        if 'inst' in locals():
+            inst.close()
+        if 'rm' in locals():
+            rm.close()
 
 if __name__ == "__main__":
     main()

@@ -276,8 +276,8 @@ class waveWidget(QtWidgets.QWidget):
             x_max = np.log10(x_max)
         else:
             pass
-        self.pw.setXRange(x_min, x_max, padding=0.02)
-        self.pw.setYRange(y_min, y_max, padding=0.1)
+        # self.pw.setXRange(x_min, x_max, padding=0.02)
+        # self.pw.setYRange(y_min, y_max, padding=0.1)
 
     # ----------------- mouse 共同处理 ----------------
     def _mouse_common(self, pos):

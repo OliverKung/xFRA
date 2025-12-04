@@ -2,3 +2,4 @@ PyQt5
 pyqtribbon
 pyqtgraph
 numpy
+pyvisa

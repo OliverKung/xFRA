@@ -40,7 +40,7 @@ class xConvS2PReader:
         
         # 解析数据
         self._parse_data(data_lines)
-        
+
         return {
             'freq': self.freq,
             's11': self.s11,
@@ -49,7 +49,6 @@ class xConvS2PReader:
             's22': self.s22,
             'z0': self.z0
         }
-    
     def _parse_option_line(self, line: str):
         """解析选项行，如: # HZ S RI R 50"""
         parts = line[1:].strip().upper().split()
@@ -74,9 +73,10 @@ class xConvS2PReader:
                 freq.append(values[0])
                 # 解析为复数 (实部, 虚部格式)
                 s11.append(complex(values[1], values[2]))
-                s12.append(complex(values[3], values[4]))
-                s21.append(complex(values[5], values[6]))
+                s21.append(complex(values[3], values[4]))
+                s12.append(complex(values[5], values[6]))
                 s22.append(complex(values[7], values[8]))
+                print(f"Parsed line: freq={values[0]}, S11={s11[-1]}, S12={s12[-1]}, S21={s21[-1]}, S22={s22[-1]}")
         
         # 频率单位转换到Hz
         freq = np.array(freq)

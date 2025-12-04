@@ -8,6 +8,8 @@ import math
 from basic_custom_widget.QEngLineEdit import QEngLineEdit
 from basic_custom_widget.QSwitchButton import QSwitchButton
 
+from pathlib import Path
+
 class ControlWidget(QWidget):
     # 任何参数改动都发这个信号，dict 携带最新值
     params_changed = pyqtSignal(dict)
@@ -22,6 +24,35 @@ class ControlWidget(QWidget):
         self.setMinimumWidth(320)
         self.setMaximumWidth(500)
         layout = QVBoxLayout(self)
+
+        # 0.设备设置
+        devgrp = QGroupBox("Device Settings")
+        h = QGridLayout(devgrp)
+        self.device_type = QComboBox()
+        self.device_type.addItems(["VNA","E-M"])
+        self.device_m_model = QComboBox()
+        self.device_m_model.addItems(["SVA1000X","SSA3000X"])
+        self.device_e_model = QComboBox()
+        self.device_e_model.addItems(["EM1000","EM2000"])
+        self.device_m_address = QEngLineEdit()
+        self.device_e_address = QEngLineEdit()
+        self.device_tunnel = QComboBox()
+        self.device_tunnel.addItems(["VISA","Socket","Serial"])
+
+        h.addWidget(QLabel("Type"),0,0)
+        h.addWidget(self.device_type,0,1)
+        h.addWidget(QLabel("M-Model"),1,0)
+        h.addWidget(self.device_m_model,1,1)
+        h.addWidget(QLabel("M-Address"),2,0)
+        h.addWidget(self.device_m_address,2,1)
+        h.addWidget(QLabel("E-Model"),3,0)
+        h.addWidget(self.device_e_model,3,1)
+        h.addWidget(QLabel("E-Address"),4,0)
+        h.addWidget(self.device_e_address,4,1)
+        h.addWidget(QLabel("Tunnel"),5,0)
+        h.addWidget(self.device_tunnel,5,1)
+    
+        layout.addWidget(devgrp)
 
         # 1. 频率设置
         fgrp = QGroupBox("Frequency")
@@ -147,13 +178,20 @@ class ControlWidget(QWidget):
 
         layout.addStretch()
 
+        self._device_model_refresh()
+
     # ---------- 信号 ----------
     def _connect_signals(self):
         # 数值型控件
         for w in [self.sp_fstart, self.sp_fstop, self.sp_points, self.source_level, self.sp_fspan,self.sp_fcenter]:
             w.valueChanged.connect(self._notify)
+        # line edit
+        for w in [self.device_m_address, self.device_e_address]:
+            w.textChanged.connect(self._notify)
+        # device type/model/tunnel
+        self.device_type.currentTextChanged.connect(self._device_model_refresh)
         # 下拉框
-        for w in [ self.cb_bw, self.level_unit_cb, self.receive1_att, self.receive2_att,]:
+        for w in [ self.cb_bw, self.level_unit_cb, self.receive1_att, self.receive2_att,self.device_type,self.device_m_model,self.device_e_model,self.device_tunnel]:
             w.currentTextChanged.connect(self._notify)
         # switch button
         for w in [self.sweep_log_switch, self.level_var_switch, self.sweep_fixed_button]:
@@ -186,8 +224,40 @@ class ControlWidget(QWidget):
         self.source_level.setSuffix(self.level_unit_cb.currentText())
         self.source_level.setValue(v)
 
+    def _device_model_refresh(self):
+        model=self.device_m_model.currentText()
+        dtype=self.device_type.currentText()
+        VNA_path = Path('./xDriver/VNA_Class/')
+        EM_E_path = Path('./xDriver/EM_Class/Excitation/')
+        EM_M_path = Path('./xDriver/EM_Class/Measurement/')
+        if dtype=="VNA":
+            files = [f.stem for f in VNA_path.glob('*.py') if f.is_file() and f.stem != '__init__']
+            self.device_m_model.clear()
+            self.device_m_model.addItems(files)
+            self.device_e_model.clear()
+            self.device_e_model.setEnabled(False)
+            self.device_e_address.setEnabled(False)
+        elif dtype=="E-M":
+            files_M = [f.stem for f in EM_M_path.glob('*.py') if f.is_file() and f.stem != '__init__']
+            files_E = [f.stem for f in EM_E_path.glob('*.py') if f.is_file() and f.stem != '__init__']
+            self.device_e_address.setEnabled(True)
+            self.device_e_model.setEnabled(True)
+            self.device_m_model.clear()
+            self.device_m_model.addItems(files_M)
+            self.device_e_model.clear()
+            self.device_e_model.addItems(files_E)
+        if model in [self.device_m_model.itemText(i) for i in range(self.device_m_model.count())]:
+            self.device_m_model.setCurrentText(model)
+        self._notify()
+
     def _notify(self):
         d = dict(
+            device_m_address=self.device_m_address.text(),
+            device_e_address=self.device_e_address.text(),
+            device_type=self.device_type.currentText(),
+            device_m_model=self.device_m_model.currentText(),
+            device_e_model=self.device_e_model.currentText(),
+            device_tunnel=self.device_tunnel.currentText(),
             sweep_fixed = self.sweep_fixed_button.isOn(),
             fstart=self.sp_fstart.value(),
             fstop=self.sp_fstop.value(),
@@ -202,5 +272,5 @@ class ControlWidget(QWidget):
             recev2_att = self.receive2_att.currentText(),
             rbw=self.cb_bw.currentText(),
         )
-        # print(d)
+        print(d)
         self.params_changed.emit(d)
