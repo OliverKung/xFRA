@@ -24,6 +24,8 @@ class QEngLineEdit(QLineEdit):
     def __init__(self, parent=None, alignment=Qt.AlignLeft,
                  sig_figs: int = 10, decimals: int = -1, suffix: str = ""):
         super().__init__(parent)
+        self.maxValue = 1e30
+        self.minValue = -1e30
         self.setAlignment(alignment)
         self._sig_figs = max(1, sig_figs)
         self._decimals = decimals          # <0 用有效数字
@@ -115,6 +117,14 @@ class QEngLineEdit(QLineEdit):
     def _reformat(self):
         try:
             v = self.get_value()
+            if v < self.minValue:
+                v = self.minValue
+            elif v > self.maxValue:
+                v = self.maxValue
             self.set_value(v)
         except ValueError:
             pass
+    # ----------- 限制 ----------
+    def setLimits(self, min_value: float, max_value: float):
+        self.minValue = min_value
+        self.maxValue = max_value

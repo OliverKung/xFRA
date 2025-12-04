@@ -1,12 +1,14 @@
 from PyQt5.QtWidgets import (QWidget, QGridLayout, QLabel, QSpinBox,
                              QDoubleSpinBox, QComboBox, QPushButton,
                              QGroupBox, QHBoxLayout, QVBoxLayout,
-                             QCheckBox, QFrame, QSplitter)
+                             QCheckBox, QFrame, QSplitter,QLineEdit)
 from PyQt5.QtCore import pyqtSignal, Qt
 import math
 
 from basic_custom_widget.QEngLineEdit import QEngLineEdit
 from basic_custom_widget.QSwitchButton import QSwitchButton
+from basic_custom_widget.QLabelComboBox import QLabelComboBox
+from basic_custom_widget.QLabelLineEdit import QLabelLineEdit
 
 from pathlib import Path
 
@@ -27,30 +29,24 @@ class ControlWidget(QWidget):
 
         # 0.设备设置
         devgrp = QGroupBox("Device Settings")
-        h = QGridLayout(devgrp)
-        self.device_type = QComboBox()
-        self.device_type.addItems(["VNA","E-M"])
-        self.device_m_model = QComboBox()
-        self.device_m_model.addItems(["SVA1000X","SSA3000X"])
-        self.device_e_model = QComboBox()
-        self.device_e_model.addItems(["EM1000","EM2000"])
-        self.device_m_address = QEngLineEdit()
-        self.device_e_address = QEngLineEdit()
-        self.device_tunnel = QComboBox()
-        self.device_tunnel.addItems(["VISA","Socket","Serial"])
+        h = QVBoxLayout(devgrp)
+        self.device_type = QLabelComboBox("Type")
+        self.device_type.setComboItems(["VNA","E-M"])
+        self.device_m_model = QLabelComboBox("M-Model")
+        self.device_m_model.setComboItems(["SVA1000X","SSA3000X"])
+        self.device_e_model = QLabelComboBox("E-Model")
+        self.device_e_model.setComboItems(["EM1000","EM2000"])
+        self.device_m_address = QLabelLineEdit("M-Address")
+        self.device_e_address = QLabelLineEdit("E-Address")
+        self.device_tunnel = QLabelComboBox("Tunnel")
+        self.device_tunnel.setComboItems(["VISA","Socket","Serial"])
 
-        h.addWidget(QLabel("Type"),0,0)
-        h.addWidget(self.device_type,0,1)
-        h.addWidget(QLabel("M-Model"),1,0)
-        h.addWidget(self.device_m_model,1,1)
-        h.addWidget(QLabel("M-Address"),2,0)
-        h.addWidget(self.device_m_address,2,1)
-        h.addWidget(QLabel("E-Model"),3,0)
-        h.addWidget(self.device_e_model,3,1)
-        h.addWidget(QLabel("E-Address"),4,0)
-        h.addWidget(self.device_e_address,4,1)
-        h.addWidget(QLabel("Tunnel"),5,0)
-        h.addWidget(self.device_tunnel,5,1)
+        h.addWidget(self.device_type)
+        h.addWidget(self.device_m_model)
+        h.addWidget(self.device_m_address)
+        h.addWidget(self.device_e_model)
+        h.addWidget(self.device_e_address)
+        h.addWidget(self.device_tunnel)
     
         layout.addWidget(devgrp)
 
@@ -232,20 +228,20 @@ class ControlWidget(QWidget):
         EM_M_path = Path('./xDriver/EM_Class/Measurement/')
         if dtype=="VNA":
             files = [f.stem for f in VNA_path.glob('*.py') if f.is_file() and f.stem != '__init__']
-            self.device_m_model.clear()
-            self.device_m_model.addItems(files)
-            self.device_e_model.clear()
+            self.device_m_model.setComboItems(files)
             self.device_e_model.setEnabled(False)
             self.device_e_address.setEnabled(False)
+            self.device_e_address.setVisible(False)
+            self.device_e_model.setVisible(False)
         elif dtype=="E-M":
             files_M = [f.stem for f in EM_M_path.glob('*.py') if f.is_file() and f.stem != '__init__']
             files_E = [f.stem for f in EM_E_path.glob('*.py') if f.is_file() and f.stem != '__init__']
             self.device_e_address.setEnabled(True)
             self.device_e_model.setEnabled(True)
-            self.device_m_model.clear()
-            self.device_m_model.addItems(files_M)
-            self.device_e_model.clear()
-            self.device_e_model.addItems(files_E)
+            self.device_e_address.setVisible(True)
+            self.device_e_model.setVisible(True)
+            self.device_m_model.setComboItems(files_M)
+            self.device_e_model.setComboItems(files_E)
         if model in [self.device_m_model.itemText(i) for i in range(self.device_m_model.count())]:
             self.device_m_model.setCurrentText(model)
         self._notify()

@@ -53,6 +53,12 @@ class QLabelComboBox(QWidget):
         self.combo.clear()
         self.combo.addItems(items)
 
+    # 获取 ComboBox 的选项数量
+    def count(self):
+        return self.combo.count()
+    # 获取指定索引的选项文本
+    def itemText(self, index: int):
+        return self.combo.itemText(index)
 
 # 示例用法
 if __name__ == "__main__":
