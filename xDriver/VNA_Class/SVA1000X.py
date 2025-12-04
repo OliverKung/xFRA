@@ -1,6 +1,7 @@
 # xDrviver/VNA_Class/SVA1000X.py
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# xDrvSetting begin
 # device-type VNA
 # model SVA1000X
 # tunnel VISA socket
@@ -12,6 +13,7 @@
 # ifbw 1000 3000 10000 30000 100000
 # variable-amp reserved
 # source-level -30 -20 -10 -5 0 5 10
+# xDrvSetting end
 
 import argparse
 import sys

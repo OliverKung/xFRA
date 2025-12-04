@@ -11,6 +11,7 @@ from basic_custom_widget.QLabelComboBox import QLabelComboBox
 from basic_custom_widget.QLabelLineEdit import QLabelLineEdit
 
 from pathlib import Path
+import chardet
 
 class ControlWidget(QWidget):
     # 任何参数改动都发这个信号，dict 携带最新值
@@ -18,6 +19,9 @@ class ControlWidget(QWidget):
 
     def __init__(self):
         super().__init__()
+        self.VNA_path = Path('./xDriver/VNA_Class/')
+        self.EM_E_path = Path('./xDriver/EM_Class/Excitation/')
+        self.EM_M_path = Path('./xDriver/EM_Class/Measurement/')
         self._build_ui()
         self._connect_signals()
 
@@ -175,6 +179,7 @@ class ControlWidget(QWidget):
         layout.addStretch()
 
         self._device_model_refresh()
+        self._update_model_setting()
 
     # ---------- 信号 ----------
     def _connect_signals(self):
@@ -186,6 +191,7 @@ class ControlWidget(QWidget):
             w.textChanged.connect(self._notify)
         # device type/model/tunnel
         self.device_type.currentTextChanged.connect(self._device_model_refresh)
+        self.device_m_model.currentTextChanged.connect(self._update_model_setting)
         # 下拉框
         for w in [ self.cb_bw, self.level_unit_cb, self.receive1_att, self.receive2_att,self.device_type,self.device_m_model,self.device_e_model,self.device_tunnel]:
             w.currentTextChanged.connect(self._notify)
@@ -223,19 +229,16 @@ class ControlWidget(QWidget):
     def _device_model_refresh(self):
         model=self.device_m_model.currentText()
         dtype=self.device_type.currentText()
-        VNA_path = Path('./xDriver/VNA_Class/')
-        EM_E_path = Path('./xDriver/EM_Class/Excitation/')
-        EM_M_path = Path('./xDriver/EM_Class/Measurement/')
         if dtype=="VNA":
-            files = [f.stem for f in VNA_path.glob('*.py') if f.is_file() and f.stem != '__init__']
+            files = [f.stem for f in self.VNA_path.glob('*.py') if f.is_file() and f.stem != '__init__']
             self.device_m_model.setComboItems(files)
             self.device_e_model.setEnabled(False)
             self.device_e_address.setEnabled(False)
             self.device_e_address.setVisible(False)
             self.device_e_model.setVisible(False)
         elif dtype=="E-M":
-            files_M = [f.stem for f in EM_M_path.glob('*.py') if f.is_file() and f.stem != '__init__']
-            files_E = [f.stem for f in EM_E_path.glob('*.py') if f.is_file() and f.stem != '__init__']
+            files_M = [f.stem for f in self.EM_M_path.glob('*.py') if f.is_file() and f.stem != '__init__']
+            files_E = [f.stem for f in self.EM_E_path.glob('*.py') if f.is_file() and f.stem != '__init__']
             self.device_e_address.setEnabled(True)
             self.device_e_model.setEnabled(True)
             self.device_e_address.setVisible(True)
@@ -245,6 +248,24 @@ class ControlWidget(QWidget):
         if model in [self.device_m_model.itemText(i) for i in range(self.device_m_model.count())]:
             self.device_m_model.setCurrentText(model)
         self._notify()
+
+    def _update_model_setting(self):
+        if self.device_type.currentText()=="VNA":
+            str_VNA_path = self.VNA_path.as_posix() + '/'
+            with open(str_VNA_path+self.device_m_model.currentText()+'.py', 'rb') as f:
+                raw_data = f.read()
+                detected = chardet.detect(raw_data)
+                encoding = detected['encoding']
+            with open(str_VNA_path+self.device_m_model.currentText()+'.py', 'r',encoding=encoding) as f:
+                fileLines = f.readlines()
+                settingLine = []
+                for line in fileLines:
+                    if line.startswith('#'):
+                        settingLine.append(line)
+            print(settingLine)
+        elif self.device_type.currentText()=="E-M":
+            with open(self.EM_M_path / (self.device_m_model.currentText()+'.py'), 'r') as f:
+                settingLine = f.readlines()
 
     def _notify(self):
         d = dict(

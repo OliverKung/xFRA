@@ -11,7 +11,7 @@ class QLabelLineEdit(QWidget):
 
         self.label = QLabel(label_text)
         self.lineEdit = QLineEdit()
-        
+
         # 连接信号
         self.lineEdit.textChanged.connect(self.textChanged.emit)
 
@@ -28,7 +28,7 @@ class QLabelLineEdit(QWidget):
         
     # 获取当前文本
     def currentText(self):
-        return self.lineEdit.currentText()
+        return self.lineEdit.text()
 
     # 设置 QLabel 的文本
     def setLabelText(self, text: str):
