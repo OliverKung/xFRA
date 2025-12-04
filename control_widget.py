@@ -262,7 +262,15 @@ class ControlWidget(QWidget):
                 for line in fileLines:
                     if line.startswith('#'):
                         settingLine.append(line)
-            print(settingLine)
+            xDrvSettingLine = False
+            for line in settingLine:
+                if line.startswith('# xDrvSetting begin'):
+                    xDrvSettingLine = True
+                elif line.startswith('# xDrvSetting end'):
+                    xDrvSettingLine = False
+                if xDrvSettingLine and not line.startswith('# xDrvSetting'):
+                    print(line.strip())#stop at 2025年12月5日00点41分
+                    
         elif self.device_type.currentText()=="E-M":
             with open(self.EM_M_path / (self.device_m_model.currentText()+'.py'), 'r') as f:
                 settingLine = f.readlines()
