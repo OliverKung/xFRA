@@ -1,0 +1,66 @@
+Date : 2025-12-05 15:24:54
+Directory : h:\SoftDev\xFRA\xFRA
+Total : 29 files,  550 codes, 140 comments, 80 blanks, all 770 lines
+
+Languages
++------------------+------------+------------+------------+------------+------------+
+| language         | files      | code       | comment    | blank      | total      |
++------------------+------------+------------+------------+------------+------------+
+| Python           |         23 |        502 |        140 |         74 |        716 |
+| JSON             |          2 |         26 |          0 |          1 |         27 |
+| Markdown         |          3 |         20 |          0 |          5 |         25 |
+| pip requirements |          1 |          2 |          0 |          0 |          2 |
++------------------+------------+------------+------------+------------+------------+
+
+Directories
++---------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                          | files      | code       | comment    | blank      | total      |
++---------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                             |         29 |        550 |        140 |         80 |        770 |
+| . (Files)                                                     |          7 |        190 |          7 |          3 |        200 |
+| basic_custom_widget                                           |          4 |         41 |         15 |         10 |         66 |
+| custom_plot_widget                                            |          2 |         71 |         15 |          7 |         93 |
+| xConv                                                         |          3 |         84 |         21 |          5 |        110 |
+| xDriver                                                       |         13 |        164 |         82 |         55 |        301 |
+| xDriver (Files)                                               |          2 |         38 |         17 |          9 |         64 |
+| xDriver\EM_Class                                              |          6 |          0 |          0 |          6 |          6 |
+| xDriver\EM_Class\Excitation                                   |          2 |          0 |          0 |          2 |          2 |
+| xDriver\EM_Class\Measurement                                  |          4 |          0 |          0 |          4 |          4 |
+| xDriver\VNA_Class                                             |          5 |        126 |         65 |         40 |        231 |
++---------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++---------------------------------------------------------------+------------------+------------+------------+------------+------------+
+| filename                                                      | language         | code       | comment    | blank      | total      |
++---------------------------------------------------------------+------------------+------------+------------+------------+------------+
+| h:\SoftDev\xFRA\xFRA\README.md                                | Markdown         |          2 |          0 |          0 |          2 |
+| h:\SoftDev\xFRA\xFRA\README_en.md                             | Markdown         |          2 |          0 |          0 |          2 |
+| h:\SoftDev\xFRA\xFRA\basic_custom_widget\QDragGroupBox.py     | Python           |          1 |          4 |          0 |          5 |
+| h:\SoftDev\xFRA\xFRA\basic_custom_widget\QEngLineEdit.py      | Python           |         11 |          1 |          0 |         12 |
+| h:\SoftDev\xFRA\xFRA\basic_custom_widget\QLabelComboBox.py    | Python           |          4 |          2 |          0 |          6 |
+| h:\SoftDev\xFRA\xFRA\basic_custom_widget\QLabelLineEdit.py    | Python           |         25 |          8 |         10 |         43 |
+| h:\SoftDev\xFRA\xFRA\control_widget.py                        | Python           |        149 |          4 |          5 |        158 |
+| h:\SoftDev\xFRA\xFRA\custom_plot_widget\style.json            | JSON             |         24 |          0 |          1 |         25 |
+| h:\SoftDev\xFRA\xFRA\custom_plot_widget\waveWidget.py         | Python           |         47 |         15 |          6 |         68 |
+| h:\SoftDev\xFRA\xFRA\main.py                                  | Python           |         30 |         12 |          1 |         43 |
+| h:\SoftDev\xFRA\xFRA\plot_widget.py                           | Python           |         22 |          1 |          1 |         24 |
+| h:\SoftDev\xFRA\xFRA\requirements.txt                         | pip requirements |          2 |          0 |          0 |          2 |
+| h:\SoftDev\xFRA\xFRA\trace_config.py                          | Python           |        -17 |        -10 |         -4 |        -31 |
+| h:\SoftDev\xFRA\xFRA\xConv\xConv.py                           | Python           |          2 |          0 |         -1 |          1 |
+| h:\SoftDev\xFRA\xFRA\xConv\xConvFormulaDef.json               | JSON             |          2 |          0 |          0 |          2 |
+| h:\SoftDev\xFRA\xFRA\xConv\xConvSNPConverter.py               | Python           |         80 |         21 |          6 |        107 |
+| h:\SoftDev\xFRA\xFRA\xDriver\EM_Class\Excitation\MSO5000.py   | Python           |          0 |          0 |          1 |          1 |
+| h:\SoftDev\xFRA\xFRA\xDriver\EM_Class\Excitation\SDG2000X.py  | Python           |          0 |          0 |          1 |          1 |
+| h:\SoftDev\xFRA\xFRA\xDriver\EM_Class\Measurement\DHO900.py   | Python           |          0 |          0 |          1 |          1 |
+| h:\SoftDev\xFRA\xFRA\xDriver\EM_Class\Measurement\MSO5000.py  | Python           |          0 |          0 |          1 |          1 |
+| h:\SoftDev\xFRA\xFRA\xDriver\EM_Class\Measurement\SDS6000X.py | Python           |          0 |          0 |          1 |          1 |
+| h:\SoftDev\xFRA\xFRA\xDriver\EM_Class\Measurement\SDS800HD.py | Python           |          0 |          0 |          1 |          1 |
+| h:\SoftDev\xFRA\xFRA\xDriver\VNA_Class\Bode100.py             | Python           |          0 |          0 |          1 |          1 |
+| h:\SoftDev\xFRA\xFRA\xDriver\VNA_Class\ENA.py                 | Python           |          0 |          0 |          1 |          1 |
+| h:\SoftDev\xFRA\xFRA\xDriver\VNA_Class\LibreVNA.py            | Python           |          0 |          0 |          1 |          1 |
+| h:\SoftDev\xFRA\xFRA\xDriver\VNA_Class\NanoVNA.py             | Python           |          0 |          0 |          1 |          1 |
+| h:\SoftDev\xFRA\xFRA\xDriver\VNA_Class\SVA1000X.py            | Python           |        126 |         65 |         36 |        227 |
+| h:\SoftDev\xFRA\xFRA\xDriver\xDriver.py                       | Python           |         22 |         17 |          4 |         43 |
+| h:\SoftDev\xFRA\xFRA\xDriver\xDriverStd.md                    | Markdown         |         16 |          0 |          5 |         21 |
+| Total                                                         |                  |        550 |        140 |         80 |        770 |
++---------------------------------------------------------------+------------------+------------+------------+------------+------------+

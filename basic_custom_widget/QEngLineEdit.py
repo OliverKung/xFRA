@@ -125,6 +125,8 @@ class QEngLineEdit(QLineEdit):
         except ValueError:
             pass
     # ----------- 限制 ----------
-    def setLimits(self, min_value: float, max_value: float):
-        self.minValue = min_value
-        self.maxValue = max_value
+    def setLimits(self, min_value: float = None, max_value: float = None):
+        if min_value is not None:
+            self.minValue = min_value
+        if max_value:
+            self.maxValue = max_value

@@ -1,0 +1,31 @@
+"filename", "language", "Python", "Markdown", "JSON", "pip requirements", "comment", "blank", "total"
+"h:\SoftDev\xFRA\xFRA\README.md", "Markdown", 0, 2, 0, 0, 0, 0, 2
+"h:\SoftDev\xFRA\xFRA\README_en.md", "Markdown", 0, 2, 0, 0, 0, 0, 2
+"h:\SoftDev\xFRA\xFRA\basic_custom_widget\QDragGroupBox.py", "Python", 1, 0, 0, 0, 4, 0, 5
+"h:\SoftDev\xFRA\xFRA\basic_custom_widget\QEngLineEdit.py", "Python", 11, 0, 0, 0, 1, 0, 12
+"h:\SoftDev\xFRA\xFRA\basic_custom_widget\QLabelComboBox.py", "Python", 4, 0, 0, 0, 2, 0, 6
+"h:\SoftDev\xFRA\xFRA\basic_custom_widget\QLabelLineEdit.py", "Python", 25, 0, 0, 0, 8, 10, 43
+"h:\SoftDev\xFRA\xFRA\control_widget.py", "Python", 149, 0, 0, 0, 4, 5, 158
+"h:\SoftDev\xFRA\xFRA\custom_plot_widget\style.json", "JSON", 0, 0, 24, 0, 0, 1, 25
+"h:\SoftDev\xFRA\xFRA\custom_plot_widget\waveWidget.py", "Python", 47, 0, 0, 0, 15, 6, 68
+"h:\SoftDev\xFRA\xFRA\main.py", "Python", 30, 0, 0, 0, 12, 1, 43
+"h:\SoftDev\xFRA\xFRA\plot_widget.py", "Python", 22, 0, 0, 0, 1, 1, 24
+"h:\SoftDev\xFRA\xFRA\requirements.txt", "pip requirements", 0, 0, 0, 2, 0, 0, 2
+"h:\SoftDev\xFRA\xFRA\trace_config.py", "Python", -17, 0, 0, 0, -10, -4, -31
+"h:\SoftDev\xFRA\xFRA\xConv\xConv.py", "Python", 2, 0, 0, 0, 0, -1, 1
+"h:\SoftDev\xFRA\xFRA\xConv\xConvFormulaDef.json", "JSON", 0, 0, 2, 0, 0, 0, 2
+"h:\SoftDev\xFRA\xFRA\xConv\xConvSNPConverter.py", "Python", 80, 0, 0, 0, 21, 6, 107
+"h:\SoftDev\xFRA\xFRA\xDriver\EM_Class\Excitation\MSO5000.py", "Python", 0, 0, 0, 0, 0, 1, 1
+"h:\SoftDev\xFRA\xFRA\xDriver\EM_Class\Excitation\SDG2000X.py", "Python", 0, 0, 0, 0, 0, 1, 1
+"h:\SoftDev\xFRA\xFRA\xDriver\EM_Class\Measurement\DHO900.py", "Python", 0, 0, 0, 0, 0, 1, 1
+"h:\SoftDev\xFRA\xFRA\xDriver\EM_Class\Measurement\MSO5000.py", "Python", 0, 0, 0, 0, 0, 1, 1
+"h:\SoftDev\xFRA\xFRA\xDriver\EM_Class\Measurement\SDS6000X.py", "Python", 0, 0, 0, 0, 0, 1, 1
+"h:\SoftDev\xFRA\xFRA\xDriver\EM_Class\Measurement\SDS800HD.py", "Python", 0, 0, 0, 0, 0, 1, 1
+"h:\SoftDev\xFRA\xFRA\xDriver\VNA_Class\Bode100.py", "Python", 0, 0, 0, 0, 0, 1, 1
+"h:\SoftDev\xFRA\xFRA\xDriver\VNA_Class\ENA.py", "Python", 0, 0, 0, 0, 0, 1, 1
+"h:\SoftDev\xFRA\xFRA\xDriver\VNA_Class\LibreVNA.py", "Python", 0, 0, 0, 0, 0, 1, 1
+"h:\SoftDev\xFRA\xFRA\xDriver\VNA_Class\NanoVNA.py", "Python", 0, 0, 0, 0, 0, 1, 1
+"h:\SoftDev\xFRA\xFRA\xDriver\VNA_Class\SVA1000X.py", "Python", 126, 0, 0, 0, 65, 36, 227
+"h:\SoftDev\xFRA\xFRA\xDriver\xDriver.py", "Python", 22, 0, 0, 0, 17, 4, 43
+"h:\SoftDev\xFRA\xFRA\xDriver\xDriverStd.md", "Markdown", 0, 16, 0, 0, 0, 5, 21
+"Total", "-", 502, 20, 26, 2, 140, 80, 770

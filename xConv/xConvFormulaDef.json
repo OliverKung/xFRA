@@ -4,7 +4,11 @@
   "s21_db": "db(s21)",
   "z11": "z0*(1+s21)/(1-s21)",
   "imZ11": "imag(z11)",
-  "z21_config3": "2*(-z0+s21*z0)/(s21)",
+  "z21_config3": "-2*(-z0+s21*z0)/(s21)",
   "imZ21_config3": "imag(z21_config3)",
-  "capZ21": "1/(imZ21_config3*omega)*1e12"
+  "capZ21_config3": "1/(imZ21_config3*omega)*1e12",
+  "z21_config2": "s21*z0/(-2+s21)",
+  "imZ21_config2": "imag(z21_config2)",
+  "indZ21_config2": "imZ21_config2/(omega)*1e9",
+  "indZ21_config3": "imZ21_config3/(omega)*1e9"  
 }

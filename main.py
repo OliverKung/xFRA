@@ -1,8 +1,12 @@
 import os
+import subprocess
 import sys
+#=============== MultiProcessing ===============#
+from multiprocessing import Process, Queue
+#===============PyQt5===============#
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QAction, qApp,
                              QSplitter, QVBoxLayout, QWidget, QFileDialog)
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt,QTimer
 from PyQt5.QtGui import QFont
 
 #===============Ribbon Bar===============#
@@ -24,6 +28,8 @@ class BodeAnalyzer(QMainWindow):
         self.file_path = None
         self.s2pdata = None
         self.xConv = xConvFormulaTransformer()
+        self.checkLifeTime = QTimer()
+        self.checkLifeTime.timeout.connect(self.check_lifetime)
         self.setWindowTitle("xFRA - A Universal Frequency Response Analyzer ")
         self.resize(1920, 1080)
         self._create_menu()
@@ -125,6 +131,19 @@ class BodeAnalyzer(QMainWindow):
                 trace_color=trace_param['color']
             )
 
+    def load_s2p_file(self, path: str):
+        # 去除文件路径的拓展名
+        self.file_path = path
+        base_path = os.path.splitext(self.file_path)[0]
+        if not base_path.endswith('_RI'):
+            print("Converting file to RI format using xConv...")
+            os.system('python ./xConv/xConvSNPConverter.py {}'.format(self.file_path))
+            reader = xConvS2PReader(base_path + '_RI.s2p')
+        else:
+            reader = xConvS2PReader(self.file_path)
+        self.s2pdata = reader.read()
+
+
     def open_file(self):
         # open the file select and save the file path to self.file_path
         path, _ = QFileDialog.getOpenFileName(
@@ -133,19 +152,43 @@ class BodeAnalyzer(QMainWindow):
             self.file_path = path
             print(f"File selected: {self.file_path}")
         try:
-            # 去除文件路径的拓展名
-            base_path = os.path.splitext(self.file_path)[0]
-            if not base_path.endswith('_RI'):
-                print("Converting file to RI format using xConv...")
-                os.system('python ./xConv/xConvSNPConverter.py {}'.format(self.file_path))
-                reader = xConvS2PReader(base_path + '_RI.s2p')
-            else:
-                reader = xConvS2PReader(self.file_path)
-            self.s2pdata = reader.read()
+            self.load_s2p_file(self.file_path)
             print("Data loaded successfully")
         except Exception as e:
             print(f"Failed to load data: {e}")
 
+    def _start_meas(self):
+        d = self.ctrl.get_params()
+        # 检查d有无空元素
+        for k, v in d.items():
+            if type (v) == str and v == "":
+                if d['device_type'] == 'VNA' and k in ['device_e_model', 'device_e_address']:
+                    continue
+                else:
+                    print(f"Parameter {k} is not set. Please check control panel.")
+                    return
+            if v is None:
+                print(f"Parameter {k} is not set. Please check control panel.")
+                return
+        print("Starting single measurement...")
+        if d['device_type'] == 'VNA':
+            cmd = f'python .\\xDriver\\VNA_Class\\{d["device_m_model"]}.py --device-address {d["device_m_address"]} ' + \
+                    f'--device-tunnel {d["device_tunnel"]} --start-freq {d["fstart"]} --stop-freq {d["fstop"]} ' + \
+                    f'--sweep-type {"LOG" if d["sweep_mode"] else "LIN"} --sweep-points {d["points"]} ' + \
+                    f'--averages {d["average"]} --ifbw {d["rbw"]} --source-level {d["level"]} --output-file .\\data\\measurement.s2p '
+        if cmd is not None:
+            # 新开一个进程，进程执行os.system(cmd)命令，以免阻塞主进程
+            self.meas_process = subprocess.Popen(cmd, shell=True)
+            # print(f"Executing command: {cmd}")
+            self.checkLifeTime.start(100)  # Check every second
+
+    def check_lifetime(self):
+        if self.meas_process.poll() is not None:  # Process has finished
+            print("Measurement process finished.")
+            self.checkLifeTime.stop()
+            self.load_s2p_file(".\\data\\measurement.s2p")
+            print("Data loaded successfully.")
+            self.update_plot()
 
     def _connect_signals(self):
         # ribbon 新建按钮 -> 刷新曲线
@@ -154,9 +197,11 @@ class BodeAnalyzer(QMainWindow):
         self.ribbon.open_button.clicked.connect(self.open_file)
         # ribbon 绘图按钮 -> 刷新曲线
         self.ribbon.plot_large_button.clicked.connect(self.update_plot)
+        # 点击启动按钮，开始扫描
+        self.ribbon.single_meas_button.clicked.connect(self._start_meas)
         # 控制面板改动 -> 刷新曲线
         self.trace.params_changed.connect(self.trace_params_changed)
-        pass
+        
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

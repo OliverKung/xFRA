@@ -5,15 +5,19 @@
 # device-type VNA
 # model SVA1000X
 # tunnel VISA socket
-# average support
-# start-freq 1000000
-# end-freq 1500000000
-# sweep-type LIN LOG
-# sweep-points 101 201 301 401 501
-# ifbw 1000 3000 10000 30000 100000
-# variable-amp reserved
-# source-level -30 -20 -10 -5 0 5 10
+# average yes
+# min-freq 1000000
+# max-freq 1500000000
+# sweep-type LOG LIN
+# sweep-points 101 10001
+# ifbw 10000
+# variable-amp no
+# source-level -20 0
+# level-unit dBm
+# Receiver1Attn 0
+# Receiver2Attn 0
 # xDrvSetting end
+# python .\xDriver\VNA_Class\SVA1000X.py --device-tunnel SOCKET --device-address TCPIP::192.168.1.119::INSTR --averages 1 --start-freq 1000000 --stop-freq 1000000000 --sweep-type LOG --sweep-points 501 --ifbw 1000 --source-level -10 --output-file measurement.s2p
 
 import argparse
 import sys
@@ -23,7 +27,6 @@ import struct
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Siglent VNA S2P Measurement Driver")
-    parser.add_argument("--device-type", default="SVA1000X", help="Device model type")
     parser.add_argument("--device-tunnel", default="VISA", help="Connection tunnel type")
     parser.add_argument("--device-address", required=True, help="VISA Resource Address (e.g., TCPIP0::192.168.1.100::INSTR)")
     parser.add_argument("--averages", type=int, default=1, help="Number of averages")

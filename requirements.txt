@@ -3,3 +3,4 @@ pyqtribbon
 pyqtgraph
 numpy
 pyvisa
+chardet

@@ -62,8 +62,6 @@ class ControlWidget(QWidget):
         hbox_sweep_set = QHBoxLayout()
         hbox_no_of_points = QHBoxLayout()
 
-        self.sweep_fixed_button = QSwitchButton()
-
         self.sp_fstart = QEngLineEdit(alignment=Qt.AlignRight,suffix="Hz")
         self.sp_fstart.setValue(10)
         
@@ -87,11 +85,6 @@ class ControlWidget(QWidget):
 
         hbox_no_of_points.addWidget(QLabel("Number of Points"))
         hbox_no_of_points.addWidget(self.sp_points)
-
-        titlehbox.addWidget(QLabel("Frequency"),3)
-        titlehbox.addWidget(QLabel("Sweep"),1)
-        titlehbox.addWidget(self.sweep_fixed_button,1)
-        titlehbox.addWidget(QLabel("Fixed"),1)
 
         grid_layout_frequency_set.addWidget(QLabel("Start Frequency"), 0, 0)
         grid_layout_frequency_set.addWidget(self.sp_fstart, 0, 1)
@@ -122,8 +115,8 @@ class ControlWidget(QWidget):
         hb_level_unit = QHBoxLayout()
 
         self.level_var_switch = QSwitchButton()
-        self.level_unit_cb = QComboBox()
-        self.level_unit_cb.addItems(["V","W","dBm"])
+        self.level_unit_cb = QLabelComboBox("Level Unit")
+        self.level_unit_cb.setComboItems(["V","W","dBm"])
         self.level_unit_cb.setCurrentIndex(2)
         self.source_level = QEngLineEdit(alignment=Qt.AlignRight,suffix=self.level_unit_cb.currentText())
         self.source_level.setValue(0)
@@ -136,7 +129,6 @@ class ControlWidget(QWidget):
         hb_level.addWidget(QLabel("Source Level"))
         hb_level.addWidget(self.source_level)
 
-        hb_level_unit.addWidget(QLabel("Level Unit"))
         hb_level_unit.addWidget(self.level_unit_cb)
 
         h.addLayout(hb_var_switch)
@@ -147,32 +139,34 @@ class ControlWidget(QWidget):
 
         # 3. 衰减器
         srcgrp = QGroupBox("Attenuator")
-        g = QHBoxLayout(srcgrp)
-        g_att = QGridLayout()
+        g = QVBoxLayout(srcgrp)
 
-        self.receive1_att = QComboBox()
-        self.receive1_att.addItems(["0 dB", "10 dB","20 dB","30 dB","40 dB"])
-        self.receive2_att = QComboBox()
-        self.receive2_att.addItems(["0 dB", "10 dB","20 dB","30 dB","40 dB"])
+        self.receive1_att = QLabelComboBox("Recv 1")
+        self.receive1_att.setComboItems(["0 dB", "10 dB","20 dB","30 dB","40 dB"])
+        self.receive2_att = QLabelComboBox("Recv 2")
+        self.receive2_att.setComboItems(["0 dB", "10 dB","20 dB","30 dB","40 dB"])
 
-        g.addWidget(QLabel("Attenuator"))
-
-        g_att.addWidget(QLabel("Receiver 1"),0,0)
-        g_att.addWidget(self.receive1_att,1,0)
-        g_att.addWidget(QLabel("Receiver 2"),0,1)
-        g_att.addWidget(self.receive2_att,1,1)
-
-        g.addLayout(g_att)
+        g.addWidget(self.receive1_att)
+        g.addWidget(self.receive2_att)
 
         layout.addWidget(srcgrp)
+        
+        # 4.平均测量
+        avggrp = QGroupBox("Averaging")
+        h = QHBoxLayout(avggrp)
+        self.average_spinbox = QSpinBox()
+        self.average_spinbox.setRange(1, 1000)
+        self.average_spinbox.setValue(1)
+        h.addWidget(QLabel("Averaging"),1)
+        h.addWidget(self.average_spinbox,1)
+        layout.addWidget(avggrp)
 
-        # 4. RBW
+        # 5. RBW
         curgrp = QGroupBox("Receiver Bandwidth")
         h = QHBoxLayout(curgrp)
-        self.cb_bw = QComboBox()
-        self.cb_bw.addItems(["1 Hz", "3 Hz", "5 Hz", "10 Hz", "30 Hz", "50 Hz","100 Hz", "300 Hz", "500 Hz", "1 kHz", "3 kHz", "5 kHz"])
+        self.cb_bw = QLabelComboBox("IF-BW")
+        self.cb_bw.setComboItems(["1 Hz", "3 Hz", "5 Hz", "10 Hz", "30 Hz", "50 Hz","100 Hz", "300 Hz", "500 Hz", "1 kHz", "3 kHz", "5 kHz"])
         self.cb_bw.setCurrentText("300 Hz")
-        h.addWidget(QLabel("Receiver Bandwidth"))
         h.addWidget(self.cb_bw)
         layout.addWidget(curgrp)
 
@@ -196,7 +190,7 @@ class ControlWidget(QWidget):
         for w in [ self.cb_bw, self.level_unit_cb, self.receive1_att, self.receive2_att,self.device_type,self.device_m_model,self.device_e_model,self.device_tunnel]:
             w.currentTextChanged.connect(self._notify)
         # switch button
-        for w in [self.sweep_log_switch, self.level_var_switch, self.sweep_fixed_button]:
+        for w in [self.sweep_log_switch, self.level_var_switch]:
             w.toggled.connect(self._notify)
         self.level_unit_cb.currentTextChanged.connect(self._unit_refresh)
         # 频率计算迭代控件
@@ -269,8 +263,53 @@ class ControlWidget(QWidget):
                 elif line.startswith('# xDrvSetting end'):
                     xDrvSettingLine = False
                 if xDrvSettingLine and not line.startswith('# xDrvSetting'):
-                    print(line.strip())#stop at 2025年12月5日00点41分
-                    
+                    command = line.strip().lstrip('#').strip()
+                    if command.startswith('model'):
+                        continue
+                    elif command.startswith('tunnel'):
+                        self.device_tunnel.setComboItems(command.split(' ')[1:])
+                    elif command.startswith('average'):
+                        if command.split(' ')[1].lower()=='yes':
+                            self.average_spinbox.setEnabled(True)
+                        else:
+                            self.average_spinbox.setEnabled(False)
+                            self.average_spinbox.setValue(1)
+                    elif command.startswith('min-freq'):
+                        min_freq = float(command.split(' ')[1])
+                        self.sp_fstart.setLimits(min_value=min_freq)
+                        self.sp_fstop.setLimits(min_value=min_freq)
+                    elif command.startswith('max-freq'):
+                        max_freq = float(command.split(' ')[1])
+                        self.sp_fstart.setLimits(max_value=max_freq)
+                        self.sp_fstop.setLimits(max_value=max_freq)
+                    elif command.startswith('sweep-type'):
+                        sweep_types = command.split(' ')[1:]
+                        if 'LIN' in sweep_types and 'LOG' in sweep_types:
+                            self.sweep_log_switch.setEnabled(True)
+                        else:
+                            self.sweep_log_switch.setEnabled(False)
+                            if 'LIN' in sweep_types:
+                                self.sweep_log_switch.setOn(False)
+                            else:
+                                self.sweep_log_switch.setOn(True)
+                    elif command.startswith('sweep-points'):
+                        self.sp_points.setRange(int(command.split(' ')[1]),int(command.split(' ')[2]))            
+                    elif command.startswith('ifbw'):
+                        self.cb_bw.setComboItems(command.split(' ')[1:])
+                    elif command.startswith('variable-amp'):
+                        if command.split(' ')[1].lower()=='yes':
+                            self.level_var_switch.setEnabled(True)
+                        else:
+                            self.level_var_switch.setEnabled(False)
+                            self.level_var_switch.setOn(False)
+                    elif command.startswith('source-level'):
+                        self.source_level.setLimits(float(command.split(' ')[1]),float(command.split(' ')[2]))
+                    elif command.startswith('level-unit'):
+                        self.level_unit_cb.setComboItems(command.split(' ')[1:])
+                    elif command.startswith('Receiver1Attn'):
+                        self.receive1_att.setComboItems([item+" dB" for item in command.split(' ')[1:]])
+                    elif command.startswith('Receiver2Attn'):
+                        self.receive2_att.setComboItems([item+" dB" for item in command.split(' ')[1:]])
         elif self.device_type.currentText()=="E-M":
             with open(self.EM_M_path / (self.device_m_model.currentText()+'.py'), 'r') as f:
                 settingLine = f.readlines()
@@ -283,7 +322,6 @@ class ControlWidget(QWidget):
             device_m_model=self.device_m_model.currentText(),
             device_e_model=self.device_e_model.currentText(),
             device_tunnel=self.device_tunnel.currentText(),
-            sweep_fixed = self.sweep_fixed_button.isOn(),
             fstart=self.sp_fstart.value(),
             fstop=self.sp_fstop.value(),
             fspan=self.sp_fspan.value(),
@@ -296,6 +334,31 @@ class ControlWidget(QWidget):
             recev1_att = self.receive1_att.currentText(),
             recev2_att = self.receive2_att.currentText(),
             rbw=self.cb_bw.currentText(),
+            average=self.average_spinbox.value()
         )
-        print(d)
+        # print(d)
         self.params_changed.emit(d)
+    
+    def get_params(self):
+        d = dict(
+            device_m_address=self.device_m_address.text(),
+            device_e_address=self.device_e_address.text(),
+            device_type=self.device_type.currentText(),
+            device_m_model=self.device_m_model.currentText(),
+            device_e_model=self.device_e_model.currentText(),
+            device_tunnel=self.device_tunnel.currentText(),
+            fstart=self.sp_fstart.value(),
+            fstop=self.sp_fstop.value(),
+            fspan=self.sp_fspan.value(),
+            fcenter=self.sp_fcenter.value(),
+            sweep_mode = self.sweep_log_switch.isOn(),
+            points=self.sp_points.value(),
+            level_variable = self.level_var_switch.isOn(),
+            level_unit = self.level_unit_cb.currentText(),
+            level = self.source_level.value(),
+            recev1_att = self.receive1_att.currentText(),
+            recev2_att = self.receive2_att.currentText(),
+            rbw=self.cb_bw.currentText(),
+            average=self.average_spinbox.value()
+        )
+        return d

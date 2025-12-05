@@ -39,7 +39,7 @@ class customRibbonBar(RibbonBar):
         self.report_button = file_panel.addSmallButton("Report",QIcon("./icon/bootstrap/archive.svg"),alignment=Qt.AlignmentFlag.AlignLeft)
         measurment_panel = self.category_home.addPanel("Measurement",showPanelOptionButton=False)
         measurment_panel.addLargeButton("Continuous",QIcon("./icon/bootstrap/skip-forward.svg"))
-        measurment_panel.addLargeButton("Single",QIcon("./icon/bootstrap/skip-end.svg"))
+        self.single_meas_button=measurment_panel.addLargeButton("Single",QIcon("./icon/bootstrap/skip-end.svg"))
         measurment_panel.addLargeButton("Stop",QIcon("./icon/bootstrap/pause.svg"))
 
         plot_panel = self.category_home.addPanel("Plot",showPanelOptionButton=False)
