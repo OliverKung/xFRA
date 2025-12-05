@@ -1,5 +1,6 @@
 **其他语言: [中文](README.md), [English](README_en.md).**
 # xFRA: A Python-based Universal Frequency Response Analyzer Software
+![alt text](image.png)
 xFRA is a universal FRA software, the GUI is based on PyQt.
 xFRA的设计理念基于通用化虚拟仪器，包括GUI、数据转换、以及仪器通讯。
 ## GUI (xFRA)
