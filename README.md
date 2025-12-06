@@ -19,9 +19,15 @@ GUI（xFRA）基于PyQt编写。
 - [X] 对任意公式进行解析
 - [X] 提供基本数学函数
 ### xDriver
-- [ ] 梳理基本输入输出格式
+- [X] 梳理基本输入输出格式
+    - [x] VNA Class
+    - [ ] E-M Class 
 - [ ] Driver for NanoVNA
-- [ ] Driver for SVA1000X
+- [X] Driver for LibreVNA
+- [X] Driver for SVA1000X
 - [ ] Driver for OSC+AFG
+## Bug List
+- [X] SVA1000X驱动在每次改变测试设置的时候第一次数据输出会卡一次，采集到的数据为全0
 ## update log
 2025年12月3日：里程碑，完成了大多数的xConv功能和GUI功能的开发，开始进行xDriver的开发
+2025年12月6日：里程碑，完成了GUI基本功能的开发，可以自动测量并刷新，完成了SVA1000X和LibreVNA的驱动开发。

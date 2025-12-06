@@ -79,7 +79,13 @@ def configure_instrument(inst, args):
     else:
         inst.write(":SENSe1:AVERage:STATe OFF")
 
-    # 7. Calibration Loading (if requested)
+    # 7.setting sweep type
+    if args.sweep_type == "LOG":
+        inst.write(":DISP:WIND:TRAC:X:SPAC LOG")
+    else:
+        inst.write(":DISP:WIND:TRAC:X:SPAC LIN")
+
+    # 8. Calibration Loading (if requested)
     if args.calibration:
         print(f"Loading calibration: {args.calibration}")
         # [cite_start]Load COR file [cite: 289]
@@ -173,6 +179,7 @@ def main():
         inst.timeout = 20000 
         
         configure_instrument(inst, args)
+        time.sleep(10)  # Allow settings to take effect
         
         if args.averages > 1:
             s_data_bf = {}
