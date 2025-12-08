@@ -32,6 +32,12 @@ class TraceConfigWidget(QGroupBox):
             "expression"   : self.le_expression.text(),
             "format"       : self.lcb_fmt.currentText(),
         }
+        
+        datasouce = self.lcb_datasource.currentText()
+        if datasouce == "SNP File":
+            cfg["snp_file_path"] = self.snp_file_path.text()
+        else:
+            cfg["snp_file_path"] = ""
 
         meas_type = self.lcb_meas.currentText()
         if meas_type == "Meas":
@@ -117,6 +123,7 @@ class TraceConfigWidget(QGroupBox):
         self.top.addWidget(self.lcb_datasource)
         self.top.addWidget(self.snp_file_path)
         self.snp_file_path.setVisible(False)  # 默认隐藏 SNP File Path
+        self.snp_file_path.mouseDoubleClicked.connect(self._open_file_dialog)
         self.top.addWidget(self.lcb_meas)
         self.top.addWidget(self.lcb_category)
         self.top.addWidget(self.le_expression,3)
@@ -150,6 +157,14 @@ class TraceConfigWidget(QGroupBox):
 
         self.lcb_fmt.currentTextChanged.connect(self._on_fmt_changed)
         self._build_fmt_page()
+    # ---------- 打开文件对话框 ----------
+    def _open_file_dialog(self, event):
+        from PyQt5.QtWidgets import QFileDialog
+        file_path, _ = QFileDialog.getOpenFileName(self, "Select S2P File", "", "S2P Files (*.s2p *.S2P);;All Files (*)")
+        if file_path:
+            self.snp_file_path.setText(file_path)
+            self._on_any_change()
+
     # ---------- 切换 Measurement ----------
     def _on_meas_changed(self):
         self._build_meas_page()

@@ -5,6 +5,7 @@ from PyQt5.QtCore import pyqtSignal
 class QLabelComboBox(QWidget):
     # 自定义信号，与 QComboBox 的 currentTextChanged 兼容
     currentTextChanged = pyqtSignal(str)
+    mouseDoubleClicked = pyqtSignal()
 
     def __init__(self, label_text="", combo_items=None, parent=None):
         super().__init__(parent)
@@ -17,6 +18,7 @@ class QLabelComboBox(QWidget):
 
         # 连接信号
         self.combo.currentTextChanged.connect(self.currentTextChanged.emit)
+        self.combo.mouseDoubleClickEvent = self._on_double_click
 
         # 布局
         layout = QHBoxLayout()
@@ -24,6 +26,9 @@ class QLabelComboBox(QWidget):
         layout.addWidget(self.combo)
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
+    # 双击事件处理
+    def _on_double_click(self, event):
+        self.mouseDoubleClicked.emit()
 
     # 设置整个控件的可见性
     def setVisible(self, visible: bool):

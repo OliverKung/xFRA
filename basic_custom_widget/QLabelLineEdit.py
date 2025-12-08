@@ -5,6 +5,7 @@ from PyQt5.QtCore import pyqtSignal
 class QLabelLineEdit(QWidget):
     # 自定义信号，与 QlineEditBox 的 currentTextChanged 兼容
     textChanged = pyqtSignal(str)
+    mouseDoubleClicked = pyqtSignal(object)
 
     def __init__(self, label_text="", parent=None):
         super().__init__(parent)
@@ -14,6 +15,7 @@ class QLabelLineEdit(QWidget):
 
         # 连接信号
         self.lineEdit.textChanged.connect(self.textChanged.emit)
+        self.lineEdit.mouseDoubleClickEvent = self._on_double_click
 
         # 布局
         layout = QHBoxLayout()
@@ -21,6 +23,10 @@ class QLabelLineEdit(QWidget):
         layout.addWidget(self.lineEdit)
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
+
+    # 双击事件处理
+    def _on_double_click(self, event):
+        self.mouseDoubleClicked.emit(event)
 
     # 设置整个控件的可见性
     def setVisible(self, visible: bool):
@@ -41,3 +47,8 @@ class QLabelLineEdit(QWidget):
     # 获取 lineEditBox 的文本
     def text(self):
         return self.lineEdit.text()
+    # 设置 lineEditBox 的占位符文本
+    def setPlaceholderText(self, text: str):
+        self.lineEdit.setPlaceholderText(text)
+    def setText(self, text: str):
+        self.lineEdit.setText(text)

@@ -151,16 +151,16 @@ class DragWaveWidget(QWidget):
     def add_box(self,box_type = "trace"):
         print(box_type)
         self._total_traces += 1
-        print(f"Adding box {self._total_traces} of type {box_type}")
+        # print(f"Adding box {self._total_traces} of type {box_type}")
         if box_type == "trace":
             self.trace_boxes[self._total_traces] = trace_config_GroupBox(self._total_traces)
-            print(f"Created trace_config_GroupBox with ID {self._total_traces}")
+            # print(f"Created trace_config_GroupBox with ID {self._total_traces}")
         elif box_type == "expression":
             self.trace_boxes[self._total_traces] = trace_config_GroupBox(self._total_traces)
             self.trace_boxes[self._total_traces].trace_config.lcb_meas.setCurrentText("Expr")
-            print(f"Created expression_config_GroupBox with ID {self._total_traces}")
+            # print(f"Created expression_config_GroupBox with ID {self._total_traces}")
         else:
-            print(f"Unknown box type: {box_type}")
+            # print(f"Unknown box type: {box_type}")
             return
         box = self.trace_boxes[self._total_traces]
         # box.params_changed.connect(self._collect_and_emit)
