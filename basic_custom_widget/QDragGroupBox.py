@@ -140,20 +140,31 @@ class DragWaveWidget(QWidget):
         self._lay = QVBoxLayout(self)
         self._lay.setSpacing(6)
         self._lay.addStretch()
-        self.btn_add = QPushButton('Add Trace')
-        self.btn_add.clicked.connect(self.add_box)
-        self._lay.insertWidget(0, self.btn_add)
+        # self.btn_add = QPushButton('Add Trace')
+        # self.btn_add.clicked.connect(self.add_box)
+        # self._lay.insertWidget(0, self.btn_add)
         self.setAcceptDrops(True)
         self.trace_boxes = {}
         self._total_traces = 0
 
     # ---------- 增 / 删 ------------------------------
-    def add_box(self):
+    def add_box(self,box_type = "trace"):
+        print(box_type)
         self._total_traces += 1
-        self.trace_boxes[self._total_traces] = trace_config_GroupBox(self._total_traces)
+        print(f"Adding box {self._total_traces} of type {box_type}")
+        if box_type == "trace":
+            self.trace_boxes[self._total_traces] = trace_config_GroupBox(self._total_traces)
+            print(f"Created trace_config_GroupBox with ID {self._total_traces}")
+        elif box_type == "expression":
+            self.trace_boxes[self._total_traces] = trace_config_GroupBox(self._total_traces)
+            self.trace_boxes[self._total_traces].trace_config.lcb_meas.setCurrentText("Expr")
+            print(f"Created expression_config_GroupBox with ID {self._total_traces}")
+        else:
+            print(f"Unknown box type: {box_type}")
+            return
         box = self.trace_boxes[self._total_traces]
-        box.params_changed.connect(self._collect_and_emit)
-        self._lay.insertWidget(self._lay.count() - 2, box)
+        # box.params_changed.connect(self._collect_and_emit)
+        self._lay.insertWidget(self._lay.count() - 1, box)
         QTimer.singleShot(60, lambda: self._scroll_to_box(box))
 
     def remove_box(self, box):

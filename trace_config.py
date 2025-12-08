@@ -11,6 +11,7 @@ from PyQt5.QtCore import pyqtSignal   # <-- 新增
 
 from basic_custom_widget.QLabelComboBox import QLabelComboBox
 from basic_custom_widget.QIconButtonWidget import QIconButtonWidget
+from basic_custom_widget.QLabelLineEdit import QLabelLineEdit
 
 
 # ==================================================================
@@ -90,11 +91,17 @@ class TraceConfigWidget(QGroupBox):
         # 信号
         self.lcb_meas.currentTextChanged.connect(self._on_meas_changed)
         self.lcb_fmt.currentTextChanged.connect(self._on_fmt_changed)
+        self.lcb_datasource.currentTextChanged.connect(self._on_datasource_changed)
         self._connect_signals()
-        self.setMaximumHeight(350)   # 数字随意
+        # self.setMaximumHeight(350)   # 数字随意
 
     # ---------- 初始化Measurement ---------
     def _init_meas(self):
+        self.lcb_datasource = QLabelComboBox( # lcb stands for LabelComboBox
+            label_text="Data Source",
+            combo_items=["Meas", "SNP File"]
+        )
+        self.snp_file_path = QLabelLineEdit(label_text="SNP File Path")
         self.lcb_meas = QLabelComboBox(# lcb stands for LabelComboBox
             label_text="Measurement",
             combo_items=["Meas", "Expr"]
@@ -107,6 +114,9 @@ class TraceConfigWidget(QGroupBox):
 
         self.le_expression = QLineEdit() #le stands for LineEdit
 
+        self.top.addWidget(self.lcb_datasource)
+        self.top.addWidget(self.snp_file_path)
+        self.snp_file_path.setVisible(False)  # 默认隐藏 SNP File Path
         self.top.addWidget(self.lcb_meas)
         self.top.addWidget(self.lcb_category)
         self.top.addWidget(self.le_expression,3)
@@ -171,7 +181,12 @@ class TraceConfigWidget(QGroupBox):
             self.checkbox_unwrap_phase.setVisible(True)
         else:
             return
-    
+    # ---------- 切换datasource ----------
+    def _on_datasource_changed(self):
+        if self.lcb_datasource.currentText() == "SNP File":
+            self.snp_file_path.setVisible(True)
+        else:
+            self.snp_file_path.setVisible(False)
     def _on_any_change(self):
         self.trace_config_changed.emit(self.get_config())
         # 4. 在 _init_ui 末尾，把所有控件的信号连到统一槽

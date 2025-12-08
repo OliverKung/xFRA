@@ -197,6 +197,15 @@ class BodeAnalyzer(QMainWindow):
         self.ribbon.open_button.clicked.connect(self.open_file)
         # ribbon 绘图按钮 -> 刷新曲线
         self.ribbon.plot_large_button.clicked.connect(self.update_plot)
+        # ribbon 添加曲线按钮 -> 在trace widget中添加trace box
+        self.ribbon.add_trace_btn.clicked.connect(lambda: self.trace.dw.add_box())
+        # ribbon 添加math按钮 -> 在trace widget中添加math box
+        self.ribbon.add_math_btn.setVisible(False)
+        self.ribbon.add_math_btn.clicked.connect(lambda: self.trace.dw.add_box(box_type='math'))
+        # ribbon 添加expression按钮 -> 在trace widget中添加expression box
+        self.ribbon.add_expression_btn.clicked.connect(lambda: self.trace.dw.add_box(box_type='expression'))
+        # ribbon 添加circuit fit按钮 -> 在trace widget中添加circuit fit box
+        self.ribbon.add_circuit_fit_btn.clicked.connect(lambda: self.trace.dw.add_box(box_type='circuit_fit'))
         # 点击启动按钮，开始扫描
         self.ribbon.single_meas_button.clicked.connect(self._start_meas)
         # 控制面板改动 -> 刷新曲线
