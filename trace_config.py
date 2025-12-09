@@ -37,7 +37,7 @@ class TraceConfigWidget(QGroupBox):
         if datasouce == "SNP File":
             cfg["snp_file_path"] = self.snp_file_path.text()
         else:
-            cfg["snp_file_path"] = ""
+            cfg["snp_file_path"] = ".\\data\\measurement.s2p"
 
         meas_type = self.lcb_meas.currentText()
         if meas_type == "Meas":
@@ -112,14 +112,12 @@ class TraceConfigWidget(QGroupBox):
             label_text="Measurement",
             combo_items=["Meas", "Expr"]
         )
-
         self.lcb_category = QLabelComboBox(# lcb stands for LabelComboBox
             label_text="Category",
             combo_items=["Imped", "Refl", "Gain", "Admit"]
         )
-
         self.le_expression = QLineEdit() #le stands for LineEdit
-
+        
         self.top.addWidget(self.lcb_datasource)
         self.top.addWidget(self.snp_file_path)
         self.snp_file_path.setVisible(False)  # 默认隐藏 SNP File Path

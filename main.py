@@ -26,7 +26,9 @@ class BodeAnalyzer(QMainWindow):
     def __init__(self):
         super().__init__()
         self.file_path = None
+        # 针对每一条曲线都创建对应的s2pdata
         self.s2pdata = None
+        self.trace_param = {}
         self.xConv = xConvFormulaTransformer()
         self.checkLifeTime = QTimer()
         self.checkLifeTime.timeout.connect(self.check_lifetime)
@@ -85,11 +87,11 @@ class BodeAnalyzer(QMainWindow):
     
     def update_plot(self):
         self.trace_param = self.trace.get_trace_params()
-        if not self.s2pdata:
-            print("No data loaded yet.")
-            return
-        else:
-            self.xConv.load_formulas(self.s2pdata, "xConv\\xConvFormulaDef.json") 
+        # if not self.s2pdata:
+        #     print("No data loaded yet.")
+        #     return
+        # else:
+        #     self.xConv.load_formulas(self.s2pdata, "xConv\\xConvFormulaDef.json") 
         self.plot.remove_trace(wave_key="1")
         log_idx = 0
         lin_idx = 0
@@ -101,9 +103,13 @@ class BodeAnalyzer(QMainWindow):
             # 如果trace_param已被删除，则跳过
             if trace_param.get('deleted', False):
                 continue
+            # 读取S2P的数据
+            s2pdata = self.load_s2p_file(trace_param['snp_file_path'])
+            xConv= xConvFormulaTransformer()
+            xConv.load_formulas(s2pdata, "xConv\\xConvFormulaDef.json")
             # 计算x_data和y_data
-            x_data = self.s2pdata['freq']
-            y_data = self.xConv.apply_formula(self.s2pdata, trace_param['expression'])
+            x_data = s2pdata['freq']
+            y_data = xConv.apply_formula(s2pdata, trace_param['expression'])
             freq_axis = trace_param['x_axis_scale'].lower()
             # 根据坐标类型决定添加到哪个waveWidget
             if freq_axis == 'log':
@@ -130,18 +136,17 @@ class BodeAnalyzer(QMainWindow):
                 label=trace_name,
                 trace_color=trace_param['color']
             )
-
+    # ---------- 读取文件，返回一个s2p数据字典 ----------
     def load_s2p_file(self, path: str):
         # 去除文件路径的拓展名
-        self.file_path = path
-        base_path = os.path.splitext(self.file_path)[0]
+        base_path = os.path.splitext(path)[0]
         if not base_path.endswith('_RI'):
             print("Converting file to RI format using xConv...")
-            os.system('python ./xConv/xConvSNPConverter.py {}'.format(self.file_path))
+            os.system('python ./xConv/xConvSNPConverter.py {}'.format(path))
             reader = xConvS2PReader(base_path + '_RI.s2p')
         else:
-            reader = xConvS2PReader(self.file_path)
-        self.s2pdata = reader.read()
+            reader = xConvS2PReader(path)
+        return reader.read()
 
 
     def open_file(self):
