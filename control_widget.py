@@ -313,9 +313,10 @@ class ControlWidget(QWidget):
                     elif command.startswith('Receiver2Attn'):
                         self.receive2_att.setComboItems([item+" dB" for item in command.split(' ')[1:]])
         elif self.device_type.currentText()=="E-M":
-            return
-            # with open(self.EM_M_path / (self.device_m_model.currentText()+'.py'), 'r') as f:
-            #     settingLine = f.readlines()
+            if self.device_m_model.currentText() == "":
+                return
+            with open(self.EM_M_path / (self.device_m_model.currentText()+'.py'), 'r') as f:
+                settingLine = f.readlines()
 
     def _notify(self):
         d = dict(

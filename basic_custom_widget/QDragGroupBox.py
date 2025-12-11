@@ -175,7 +175,6 @@ class DragWaveWidget(QWidget):
         # box.params_changed.connect(self._collect_and_emit)
         self._lay.insertWidget(self._lay.count() - 1, box)
         QTimer.singleShot(60, lambda: self._scroll_to_box(box))
-        print(self.trace_boxes)
 
     def remove_box(self, box):
         self._lay.removeWidget(box)
