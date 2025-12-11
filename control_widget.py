@@ -246,6 +246,8 @@ class ControlWidget(QWidget):
     def _update_model_setting(self):
         if self.device_type.currentText()=="VNA":
             str_VNA_path = self.VNA_path.as_posix() + '/'
+            if self.device_m_model.currentText() == "":
+                return
             with open(str_VNA_path+self.device_m_model.currentText()+'.py', 'rb') as f:
                 raw_data = f.read()
                 detected = chardet.detect(raw_data)
@@ -311,8 +313,9 @@ class ControlWidget(QWidget):
                     elif command.startswith('Receiver2Attn'):
                         self.receive2_att.setComboItems([item+" dB" for item in command.split(' ')[1:]])
         elif self.device_type.currentText()=="E-M":
-            with open(self.EM_M_path / (self.device_m_model.currentText()+'.py'), 'r') as f:
-                settingLine = f.readlines()
+            return
+            # with open(self.EM_M_path / (self.device_m_model.currentText()+'.py'), 'r') as f:
+            #     settingLine = f.readlines()
 
     def _notify(self):
         d = dict(
