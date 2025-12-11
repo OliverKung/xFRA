@@ -26,11 +26,12 @@ GUI（xFRA）基于PyQt编写。
 ### xDriver
 - [X] 梳理基本输入输出格式
     - [x] VNA Class
-    - [ ] E-M Class 
+    - [X] E-M Class 
 - [ ] Driver for NanoVNA
 - [X] Driver for LibreVNA
 - [X] Driver for SVA1000X
 - [ ] Driver for OSC+AFG
+    - [ ] 根据输入参数，重载Module
 ## Bug List
 - [X] SVA1000X驱动在每次改变测试设置的时候第一次数据输出会卡一次，采集到的数据为全0
 ## update log
