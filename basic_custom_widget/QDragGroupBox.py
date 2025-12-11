@@ -150,22 +150,32 @@ class DragWaveWidget(QWidget):
     # ---------- 增 / 删 ------------------------------
     def add_box(self,box_type = "trace"):
         print(box_type)
-        self._total_traces += 1
+        # 检查trace_boxes中是否有被删除的box可以复用
+        trace_idx = None
+        for idx in range(1, self._total_traces + 1):
+            box = self.trace_boxes.get(idx)
+            if box is None or getattr(box, 'deleted', False):
+                trace_idx = idx
+                break
+        if trace_idx is None:
+            self._total_traces += 1
+            trace_idx = self._total_traces
         # print(f"Adding box {self._total_traces} of type {box_type}")
         if box_type == "trace":
-            self.trace_boxes[self._total_traces] = trace_config_GroupBox(self._total_traces)
+            self.trace_boxes[trace_idx] = trace_config_GroupBox(trace_idx)
             # print(f"Created trace_config_GroupBox with ID {self._total_traces}")
         elif box_type == "expression":
-            self.trace_boxes[self._total_traces] = trace_config_GroupBox(self._total_traces)
-            self.trace_boxes[self._total_traces].trace_config.lcb_meas.setCurrentText("Expr")
+            self.trace_boxes[trace_idx] = trace_config_GroupBox(trace_idx)
+            self.trace_boxes[trace_idx].trace_config.lcb_meas.setCurrentText("Expr")
             # print(f"Created expression_config_GroupBox with ID {self._total_traces}")
         else:
             # print(f"Unknown box type: {box_type}")
             return
-        box = self.trace_boxes[self._total_traces]
+        box = self.trace_boxes[trace_idx]
         # box.params_changed.connect(self._collect_and_emit)
         self._lay.insertWidget(self._lay.count() - 1, box)
         QTimer.singleShot(60, lambda: self._scroll_to_box(box))
+        print(self.trace_boxes)
 
     def remove_box(self, box):
         self._lay.removeWidget(box)

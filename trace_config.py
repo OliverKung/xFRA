@@ -105,7 +105,7 @@ class TraceConfigWidget(QGroupBox):
     def _init_meas(self):
         self.lcb_datasource = QLabelComboBox( # lcb stands for LabelComboBox
             label_text="Data Source",
-            combo_items=["Meas", "SNP File"]
+            combo_items=["Meas", "SNP File", "Circuit Fit"]
         )
         self.snp_file_path = QLabelLineEdit(label_text="SNP File Path")
         self.lcb_meas = QLabelComboBox(# lcb stands for LabelComboBox
@@ -115,6 +115,10 @@ class TraceConfigWidget(QGroupBox):
         self.lcb_category = QLabelComboBox(# lcb stands for LabelComboBox
             label_text="Category",
             combo_items=["Imped", "Refl", "Gain", "Admit"]
+        )
+        self.lcb_combined_with = QLabelComboBox( # lcb stands for LabelComboBox
+            label_text="Combined With",
+            combo_items=["None"]
         )
         self.le_expression = QLineEdit() #le stands for LineEdit
         
