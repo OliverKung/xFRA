@@ -11,7 +11,13 @@ class instru_socket(socket.socket):
 
     def ask(self,cmd):
         self.send((cmd+"\n").encode("utf-8"))
-        msg=self.recv(1024).decode()
+        #读取所有返回内容，直到缓冲区为空
+        msg = ""
+        while True:
+            part = self.recv(1024).decode()
+            msg += part
+            if len(part) < 1024:
+                break
         return(msg)
         
     def write(self,cmd):

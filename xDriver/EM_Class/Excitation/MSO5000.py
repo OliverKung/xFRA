@@ -1,4 +1,5 @@
-import socket
+import custom_tunnel.instru_socket as instru_socket
+import custom_tunnel.instru_serial as instru_serial
 
 class MSO5000:
     def __init__(self,tunnel = "socket", address = ""):
@@ -11,7 +12,7 @@ class MSO5000:
             if len(sock_addr) == 2:
                 port = int(sock_addr[1])
             print(f"MSO5000: 连接到 IP={ip}, PORT={port}")
-            self.tunnel = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.tunnel = instru_socket.instru_socket(socket.AF_INET, socket.SOCK_STREAM)
             self.tunnel.connect((ip, port))
         elif tunnel == "VISA":
             print("MSO5000: 使用 VISA 方式连接，地址：", address)
