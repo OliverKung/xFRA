@@ -19,6 +19,9 @@ class instru_socket(socket.socket):
             if len(part) < 1024:
                 break
         return(msg)
+    
+    def query(self,cmd):
+        return self.ask(cmd)
         
     def write(self,cmd):
         self.send((cmd+"\n").encode("utf-8"))

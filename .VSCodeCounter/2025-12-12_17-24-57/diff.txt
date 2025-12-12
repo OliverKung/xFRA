@@ -1,0 +1,60 @@
+Date : 2025-12-12 17:24:57
+Directory : h:\SoftDev\xFRA\xFRA
+Total : 23 files,  385 codes, 127 comments, 58 blanks, all 570 lines
+
+Languages
++----------+------------+------------+------------+------------+------------+
+| language | files      | code       | comment    | blank      | total      |
++----------+------------+------------+------------+------------+------------+
+| Python   |         19 |        352 |        127 |         52 |        531 |
+| Markdown |          3 |         29 |          0 |          6 |         35 |
+| JSON     |          1 |          4 |          0 |          0 |          4 |
++----------+------------+------------+------------+------------+------------+
+
+Directories
++---------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                          | files      | code       | comment    | blank      | total      |
++---------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                             |         23 |        385 |        127 |         58 |        570 |
+| . (Files)                                                     |          5 |         65 |         14 |          1 |         80 |
+| basic_custom_widget                                           |          3 |         14 |         23 |          3 |         40 |
+| custom_tunnel                                                 |          3 |         24 |          7 |         11 |         42 |
+| xConv                                                         |          1 |          4 |          0 |          0 |          4 |
+| xDriver                                                       |         11 |        278 |         83 |         43 |        404 |
+| xDriver (Files)                                               |          1 |         15 |          0 |          6 |         21 |
+| xDriver\EM_Class                                              |          8 |        117 |         36 |         16 |        169 |
+| xDriver\EM_Class (Files)                                      |          1 |         35 |         11 |         13 |         59 |
+| xDriver\EM_Class\Excitation                                   |          3 |         70 |         25 |          7 |        102 |
+| xDriver\EM_Class\Measurement                                  |          4 |         12 |          0 |         -4 |          8 |
+| xDriver\VNA_Class                                             |          2 |        146 |         47 |         21 |        214 |
++---------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++---------------------------------------------------------------+----------+------------+------------+------------+------------+
+| filename                                                      | language | code       | comment    | blank      | total      |
++---------------------------------------------------------------+----------+------------+------------+------------+------------+
+| h:\SoftDev\xFRA\xFRA\README.md                                | Markdown |         13 |          0 |          0 |         13 |
+| h:\SoftDev\xFRA\xFRA\README_en.md                             | Markdown |          1 |          0 |          0 |          1 |
+| h:\SoftDev\xFRA\xFRA\basic_custom_widget\QDragGroupBox.py     | Python   |          0 |         20 |          0 |         20 |
+| h:\SoftDev\xFRA\xFRA\basic_custom_widget\QLabelComboBox.py    | Python   |          6 |          1 |          2 |          9 |
+| h:\SoftDev\xFRA\xFRA\basic_custom_widget\QLabelLineEdit.py    | Python   |          8 |          2 |          1 |         11 |
+| h:\SoftDev\xFRA\xFRA\control_widget.py                        | Python   |          4 |          0 |          0 |          4 |
+| h:\SoftDev\xFRA\xFRA\custom_tunnel\__init__.py                | Python   |          0 |          0 |          1 |          1 |
+| h:\SoftDev\xFRA\xFRA\custom_tunnel\instru_serial.py           | Python   |          9 |          0 |          4 |         13 |
+| h:\SoftDev\xFRA\xFRA\custom_tunnel\instru_socket.py           | Python   |         15 |          7 |          6 |         28 |
+| h:\SoftDev\xFRA\xFRA\main.py                                  | Python   |         17 |         11 |          2 |         30 |
+| h:\SoftDev\xFRA\xFRA\trace_config.py                          | Python   |         30 |          3 |         -1 |         32 |
+| h:\SoftDev\xFRA\xFRA\xConv\xConvFormulaDef.json               | JSON     |          4 |          0 |          0 |          4 |
+| h:\SoftDev\xFRA\xFRA\xDriver\EM_Class\Excitation\MSO5000.py   | Python   |         59 |         24 |          6 |         89 |
+| h:\SoftDev\xFRA\xFRA\xDriver\EM_Class\Excitation\SDG2000X.py  | Python   |          3 |          0 |         -1 |          2 |
+| h:\SoftDev\xFRA\xFRA\xDriver\EM_Class\Excitation\Templage.py  | Python   |          8 |          1 |          2 |         11 |
+| h:\SoftDev\xFRA\xFRA\xDriver\EM_Class\Measurement\DHO900.py   | Python   |          3 |          0 |         -1 |          2 |
+| h:\SoftDev\xFRA\xFRA\xDriver\EM_Class\Measurement\MSO5000.py  | Python   |          3 |          0 |         -1 |          2 |
+| h:\SoftDev\xFRA\xFRA\xDriver\EM_Class\Measurement\SDS6000X.py | Python   |          3 |          0 |         -1 |          2 |
+| h:\SoftDev\xFRA\xFRA\xDriver\EM_Class\Measurement\SDS800HD.py | Python   |          3 |          0 |         -1 |          2 |
+| h:\SoftDev\xFRA\xFRA\xDriver\EM_Class\xDrvEM.py               | Python   |         35 |         11 |         13 |         59 |
+| h:\SoftDev\xFRA\xFRA\xDriver\VNA_Class\LibreVNA.py            | Python   |        141 |         46 |         20 |        207 |
+| h:\SoftDev\xFRA\xFRA\xDriver\VNA_Class\SVA1000X.py            | Python   |          5 |          1 |          1 |          7 |
+| h:\SoftDev\xFRA\xFRA\xDriver\xDriverStd.md                    | Markdown |         15 |          0 |          6 |         21 |
+| Total                                                         |          |        385 |        127 |         58 |        570 |
++---------------------------------------------------------------+----------+------------+------------+------------+------------+
