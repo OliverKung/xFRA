@@ -2,7 +2,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # xDrvSetting begin
-# device-type OSC
+# device-type Measurement
 # model MSO5000
 # tunnel visa socket serial
 # average yes
