@@ -27,11 +27,22 @@ from enum import Enum
 sys.path.append('./xDriver/EM_Class/')
 from typedef import *
 
+def voltageScaleLimiter(voltagescale,channel_atte,freq):
+    if(voltagescale>10):
+        return 10*channel_atte
+    if(voltagescale<1e-3 and freq < 20e6):
+        return 1e-3*channel_atte
+    if(voltagescale<2e-3 and freq > 20e6):
+        return 2e-3*channel_atte
+    return voltagescale
+
 class MSO5000:
     def __init__(self,tunnel = "socket", address = ""):
         self.tunnel = tunnel.lower()
         self.address = address
         self.instr = None
+        self.synctriggerEnable = False
+        self.average_times = 1
         self._setup_port()
     
     def autoscale(self):
@@ -45,25 +56,56 @@ class MSO5000:
         cmd = ":MEAS:ITEM? "+items.value+","+channel.value
         return float(self.instr.ask(cmd))
     
+    def setSynctrigger(self,enable:bool):
+        if enable:
+            self.synctriggerEnable = True
+        else:
+            self.synctriggerEnable = False
+
+    def getSampleDelay(self,freq):
+        if(self.synctriggerEnable == False):
+            sample_delay=0.1 if 0.1>4*1/freq*2**self.average_times else 4*1/freq*2**self.average_times
+        else:
+            sample_delay=1 if 0.1>6*4*1/freq*2**self.average_times else 6*4*1/freq*2**self.average_times
+        return sample_delay
+
     def voltage(self,channel:channel_number,items:wave_parameter):
         max_try_times = 5
         loopcounter = 0
         voltage=self.getvoltage(channel,items)
-        while(voltage1>channel1_scale*8 and loopCounter<max_try_times):#When amplitude is too large, auto scale
-            print("CH1 voltage scale too large, voltage is "+str(voltage1)+",scale is "+str(channel1_scale)+", Freq is "+str(freq))
-            self.setChannelScale(channel,channel1_scale*8)
+        freq = self.freq(channel)
+        channel_atte=self.getChannelAtte(channel)
+        channel_scale=self.getChannelScale(channel)
+        sample_delay=self.getSampleDelay(freq)
+        # Auto scale for input channel when voltage is too large or too small
+        while(voltage>channel_scale*8 and loopcounter<max_try_times):#When amplitude is too large, auto scale
+            print("CH1 voltage scale too large, voltage is "+str(voltage)+",scale is "+str(channel_scale)+", Freq is "+str(freq))
+            self.setChannelScale(channel,channel_scale*8)
+            time.sleep(self.getSampleDelay(freq))
+            channel_scale=channel_scale*8
+            channel_scale = voltageScaleLimiter(channel_scale,channel_atte,freq)
+            voltage=self.getvoltage(channel,wave_parameter.Peak2Peak)
+            loopcounter=loopcounter+1
+        loopCounter = 0
+        # 当幅度过大的时候采用RMS代替Peak值
+        while((voltage<2*channel_atte or voltage>6*channel_atte) and loopCounter<max_try_times):
             time.sleep(sample_delay)
-            channel1_scale=channel1_scale*8
-            channel1_scale = voltageScaleLimiter(channel1_scale,channel1_atte,freq)
-            voltage1=self.voltage(channel,wave_parameter.Peak2Peak)
-            loopCounter=loopCounter+1
+            voltage=self.getvoltage(channel,wave_parameter.Peak2Peak)
+            if(voltage>1e10):
+                voltage=self.getvoltage(channel,wave_parameter.rms)*4*1.414
+            channel_scale = voltageScaleLimiter(voltage/4,channel_atte,freq)
+            self.setChannelScale(channel,channel_scale)#AutoScale when signal is too small
+            loopCounter = loopCounter+1
         
-        if loopCounter==max_try_times:
-            self.autoscale()
-            self.setOSCChannel(inputChannel,outputChannel,self.syncChannel,self.sample_method,self.average_times,freq)
-            print(channel1_scale)
-            channel1_scale=self.getChannelScale(inputChannel)
-            print(channel1_scale)
+        # if loopcounter==max_try_times:
+        #     self.autoscale()
+        #     self.setOSCChannel(inputChannel,outputChannel,self.syncChannel,self.sample_method,self.average_times,freq)
+        #     print(channel1_scale)
+        #     channel1_scale=self.getChannelScale(inputChannel)
+        #     print(channel1_scale)
+        # used to be used in PyBode, for some reason, now deprecated
+        return voltage
+
 
     def freq(self,channel:channel_number):
         cmd = ":MEAS:ITEM? FREQ,"+channel.value
@@ -148,6 +190,7 @@ class MSO5000:
 
     def setAverageTimes(self,averagetimes):
         self.instr.write(":ACQ:AVER "+str(2**averagetimes))
+        self.average_times=averagetimes
     
     def setChannelAtte(self,channel:channel_number,atte):
         self.instr.write(":"+channel.value+":PROB "+atte)

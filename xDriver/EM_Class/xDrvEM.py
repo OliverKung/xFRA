@@ -53,14 +53,7 @@ def parse_args():
     return parser.parse_args()
 
 # -------------------- 辅助函数 --------------------
-def voltageScaleLimiter(voltagescale,channel_atte,freq):
-    if(voltagescale>10):
-        return 10*channel_atte
-    if(voltagescale<1e-3 and freq < 20e6):
-        return 1e-3*channel_atte
-    if(voltagescale<2e-3 and freq > 20e6):
-        return 2e-3*channel_atte
-    return voltagescale
+
 
 # -------------------- 动态加载函数 --------------------
 def load_device_class(sub_dir: str, model: str):
@@ -195,67 +188,11 @@ class PyBode():
                 # 读取电压值
                 voltage1=m_instru.voltage(inputChannel,wave_parameter.Peak2Peak)
                 voltage2=m_instru.voltage(outputChannel,wave_parameter.Peak2Peak)
-                loopCounter = 0
-
-                #自动缩放调整幅度
-                while(voltage1>channel1_scale*8 and loopCounter<max_try_times):#When amplitude is too large, auto scale
-                    print("CH1 voltage scale too large, voltage is "+str(voltage1)+",scale is "+str(channel1_scale)+", Freq is "+str(freq))
-                    m_instru.setChannelScale(inputChannel,channel1_scale*8)
-                    time.sleep(sample_delay)
-                    channel1_scale=channel1_scale*8
-                    channel1_scale = voltageScaleLimiter(channel1_scale,channel1_atte,freq)
-                    voltage1=m_instru.voltage(inputChannel,wave_parameter.Peak2Peak)
-                    loopCounter=loopCounter+1
-                
-                if loopCounter==max_try_times:
-                    m_instru.autoscale()
-                    self.setOSCChannel(inputChannel,outputChannel,self.syncChannel,self.sample_method,self.average_times,freq)
-                    print(channel1_scale)
-                    channel1_scale=m_instru.getChannelScale(inputChannel)
-                    print(channel1_scale)
-
-                loopCounter = 0
-                while(voltage2>channel2_scale*8 and loopCounter<max_try_times):#When amplitude is too large, auto scale
-                    print("CH2 voltage scale too large, voltage is "+str(voltage2)+",scale is "+str(channel2_scale)+", Freq is "+str(freq))
-                    m_instru.setChannelScale(outputChannel,channel2_scale*8)
-                    time.sleep(sample_delay)
-                    channel2_scale=channel2_scale*8
-                    channel2_scale = voltageScaleLimiter(channel2_scale,channel2_atte,freq)
-                    voltage2=m_instru.voltage(outputChannel,wave_parameter.Peak2Peak)
-                    print(voltage2)
-                    loopCounter=loopCounter+1
-                
-                if loopCounter==max_try_times:
-                    m_instru.autoscale()
-                    self.setOSCChannel(inputChannel,outputChannel,self.syncChannel,self.sample_method,self.average_times,freq)
-                    print(channel2_scale)
-                    channel2_scale=m_instru.getChannelScale(outputChannel)
-                    print(channel2_scale)
-                    time.sleep(5)
-
-                loopCounter = 0
-                while((voltage1<2*channel1_scale or voltage1>6*channel1_scale) and loopCounter<max_try_times):
-                    time.sleep(sample_delay)
-                    voltage1=m_instru.voltage(inputChannel,wave_parameter.Peak2Peak)
-                    if(voltage1>1e10):
-                        voltage1=m_instru.voltage(inputChannel,wave_parameter.rms)*4*1.414
-                    channel1_scale = voltageScaleLimiter(voltage1/4,channel1_atte,freq)
-                    m_instru.setChannelScale(inputChannel,channel1_scale)#AutoScale when signal is too small
-                    loopCounter = loopCounter+1
-                loopCounter = 0
-                while((voltage2<2*channel2_scale or voltage2>6*channel2_scale) and loopCounter<max_try_times):
-                    time.sleep(sample_delay)
-                    voltage2=m_instru.voltage(outputChannel,wave_parameter.Peak2Peak)
-                    if(voltage2>1e10):
-                        voltage2=m_instru.voltage(inputChannel,wave_parameter.rms)*4*1.414
-                    channel2_scale = voltageScaleLimiter(voltage2/4,channel2_atte,freq)
-                    m_instru.setChannelScale(outputChannel,channel2_scale)
-                    loopCounter = loopCounter+1
 
                 time.sleep(sample_delay) #wait for measure
 
                 voltage1=m_instru.voltage(inputChannel,wave_parameter.RMS)
-
+# stop here 2025年12月14日
                 time.sleep(sample_delay)
                 voltage2=m_instru.voltage(outputChannel,wave_parameter.RMS)
                 print("freq:",freq)

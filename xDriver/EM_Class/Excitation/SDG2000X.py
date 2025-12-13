@@ -112,7 +112,7 @@ class SDG2000X:
             channel_Str="C2"
         self.instr.write(channel_Str+":OUTP LOAD,"+loadimpedance)
     
-    def getMaxSquareWaveformFreq(self):
+    def getMaxSquareFreq(self):
         return 25000000
 
 if __name__=="__main__":

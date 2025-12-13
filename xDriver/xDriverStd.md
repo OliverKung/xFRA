@@ -40,3 +40,29 @@ python xDrvEM.py --m-device-model tcp --device-address 192.168.1.119 --averages 
 - source-level 激励幅度，当可变开关打开时，输入n个频率 幅度点对，实现可变幅度
 
 - calibration 校准文件路径
+
+### Excitation类需要实现的标准函数
+- setFreqAmp(freq,amplitude,channel,unit)
+- setWaveformType(channel,waveform)
+- setChannelOutputState(channel,state)
+- setChannelLoadImpedance(channel,loadimpedance)
+- getMaxSquareFreq()
+- getAmpUnit()
+
+### Measurement类需要实现的标准函数
+#### 测量类
+- autoscale()
+- voltage(channel,items)
+- freq(channel)
+- phase(channelA,channelB)
+#### 设置类
+- setSampleMode(samplemode)
+- setChannelCouple(channel,couple)
+- setTriggerChannel(channel)
+- setAverageTimes(averagetimes)
+- setChannelAtte(channel,atte)
+- setChannelUnit(channel,unit)
+- setSynctrigger(state)
+#### 回读类
+- getSampleDelay(freq,syntriggerEnable)
+
