@@ -92,6 +92,7 @@ class MSO5000:
             loopcounter=loopcounter+1
         # 当调整次数过多，重新进行一次自动调节
         if loopcounter==max_try_times:
+            print("voltage scale auto adjust failed, autoscale once. voltage is "+str(voltage)+",scale is "+str(channel_scale)+", Freq is "+str(freq))
             self.autoscale()
             # autoscale之后，示波器通道设定可能改变，重新设置通道参数
             # self.setOSCChannel(inputChannel,outputChannel,self.syncChannel,self.sample_method,self.average_times,freq)
@@ -100,6 +101,7 @@ class MSO5000:
         loopCounter = 0
         # 自动调整量程，直到读数在合理范围内
         while((voltage<2*channel_atte or voltage>6*channel_atte) and loopCounter<max_try_times):
+            print("Auto adjusting voltage scale, voltage is "+str(voltage)+",scale is "+str(channel_scale)+", Freq is "+str(freq))
             time.sleep(sample_delay)
             voltage=self.getvoltage(channel,wave_parameter.Peak2Peak)
             # 如果超量程读数出错，采用有效值重新计算
