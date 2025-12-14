@@ -1,6 +1,7 @@
 # xDrviver/EM_Class/Excitation/MSO5000.py
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# achieve around 2s/pts for 1kHz to 100kHz 100pt no average with visa connection and 1.5s/pts for socket connection
 # xDrvSetting begin
 # device-type Measurement
 # model MSO5000
@@ -45,16 +46,89 @@ class MSO5000:
         self.average_times = 1
         self._setup_port()
     
+    # -------------------- xDrvEM 标准接口 --------------------
+    # -------------------- 测量类标准接口 --------------------
+    
+    # 自动调节量程
     def autoscale(self):
         self.instr.write(":AUT")
+    
+    # 读取并自动调整电压量程
+    def voltage(self,channel:channel_number,items:wave_parameter,freqIn=None):
+        max_try_times = 5
+        loopcounter = 0
+        voltage=self.getvoltage(channel,wave_parameter.Peak2Peak)
+        if freqIn is None:
+            freq = self.freq(channel)
+        else:
+            freq = freqIn
+        self.setTimebaseScale(0.25*1/freq)
+        channel_atte=self.getChannelAtte(channel)
+        channel_scale=self.getChannelScale(channel)
+        sample_delay=self.getSampleDelay(freq)
+        # print("Sample delay set to "+str(sample_delay)+" s for freq "+str(freq)+" Hz with average times "+str(self.average_times))
+        # Auto scale for input channel when voltage is too large
+        while(voltage>channel_scale*8 and loopcounter<max_try_times):#When amplitude is too large, auto scale
+            # print("CH1 voltage scale too large, voltage is "+str(voltage)+",scale is "+str(channel_scale)+", Freq is "+str(freq))
+            self.setChannelScale(channel,channel_scale*8)
+            time.sleep(self.getSampleDelay(freq))
+            channel_scale=channel_scale*8
+            channel_scale = voltageScaleLimiter(channel_scale,channel_atte,freq)
+            voltage=self.getvoltage(channel,wave_parameter.Peak2Peak)
+            loopcounter=loopcounter+1
+        # 当调整次数过多，重新进行一次自动调节
+        if loopcounter==max_try_times:
+            # print("voltage scale auto adjust failed, autoscale once. voltage is "+str(voltage)+",scale is "+str(channel_scale)+", Freq is "+str(freq))
+            self.autoscale()
+            # autoscale之后，示波器通道设定可能改变，重新设置通道参数
+            # self.setOSCChannel(inputChannel,outputChannel,self.syncChannel,self.sample_method,self.average_times,freq)
+            channel_scale=self.getChannelScale(channel)
+        # used to be used in PyBode, for some reason, now deprecated
+        loopCounter = 0
+        # 自动调整量程，直到读数在合理范围内
+        while((voltage<2*channel_scale or voltage>6*channel_scale) and loopCounter<max_try_times):
+            # print("Auto adjusting voltage scale, voltage is "+str(voltage)+",scale is "+str(channel_scale)+", Freq is "+str(freq))
+            time.sleep(sample_delay)
+            voltage=self.getvoltage(channel,wave_parameter.Peak2Peak)
+            # 如果超量程读数出错，采用有效值重新计算
+            if(voltage>1e10):
+                voltage=self.getvoltage(channel,wave_parameter.rms)*4*1.414
+            channel_scale = voltageScaleLimiter(voltage/4,channel_atte,freq)
+            self.setChannelScale(channel,channel_scale)
+            loopCounter = loopCounter+1
+        time.sleep(sample_delay)
+        voltage=self.getvoltage(channel,items)
+        return voltage
 
+    # 读取频率
+    def freq(self,channel:channel_number):
+        cmd = ":MEAS:ITEM? FREQ,"+channel.value
+        return float(self.instr.query(cmd))
+
+    # 读取相位差，范围-180~180度
+    def phase(self,channelA:channel_number,channelB:channel_number):
+        max_try_times = 5
+        phase=-1*self.getphase(channelA,channelB)
+        while(phase>360 or phase <-360):
+            phase=-1*self.getphase(channelA,channelB)
+        loopCounter = 0
+        while(phase > 180 or phase<-180 and loopCounter<max_try_times):
+            phase=-1*self.getphase(channelA,channelB)
+            loopCounter = loopCounter + 1
+        if(loopCounter >= max_try_times):
+            phase = 0
+        return phase
+    
+    # end----------------- 测量类标准接口 --------------------
+    # -------------------- 设置类接口 --------------------
+    # stop at here 2025年12月15日 00点27分
     def dutyCycle(self,channel:channel_number):
         cmd = ":MEAS:ITEM? PDUT"+","+channel.value
-        return float(self.instr.ask(cmd))
+        return float(self.instr.query(cmd))
     
     def getvoltage(self,channel:channel_number,items:wave_parameter):
         cmd = ":MEAS:ITEM? "+items.value+","+channel.value
-        return float(self.instr.ask(cmd))
+        return float(self.instr.query(cmd))
     
     def setSynctrigger(self,enable:bool):
         if enable:
@@ -69,72 +143,10 @@ class MSO5000:
             sample_delay=1 if 0.1>6*4*1/freq*2**self.average_times else 6*4*1/freq*2**self.average_times
         return sample_delay
 
-    def voltage(self,channel:channel_number,items:wave_parameter,freqIn=None):
-        max_try_times = 5
-        loopcounter = 0
-        voltage=self.getvoltage(channel,wave_parameter.Peak2Peak)
-        if freqIn is None:
-            freq = self.freq(channel)
-        else:
-            freq = freqIn
-        self.setTimebaseScale(0.25*1/freq)
-        channel_atte=self.getChannelAtte(channel)
-        channel_scale=self.getChannelScale(channel)
-        sample_delay=self.getSampleDelay(freq)
-        # Auto scale for input channel when voltage is too large
-        while(voltage>channel_scale*8 and loopcounter<max_try_times):#When amplitude is too large, auto scale
-            print("CH1 voltage scale too large, voltage is "+str(voltage)+",scale is "+str(channel_scale)+", Freq is "+str(freq))
-            self.setChannelScale(channel,channel_scale*8)
-            time.sleep(self.getSampleDelay(freq))
-            channel_scale=channel_scale*8
-            channel_scale = voltageScaleLimiter(channel_scale,channel_atte,freq)
-            voltage=self.getvoltage(channel,wave_parameter.Peak2Peak)
-            loopcounter=loopcounter+1
-        # 当调整次数过多，重新进行一次自动调节
-        if loopcounter==max_try_times:
-            print("voltage scale auto adjust failed, autoscale once. voltage is "+str(voltage)+",scale is "+str(channel_scale)+", Freq is "+str(freq))
-            self.autoscale()
-            # autoscale之后，示波器通道设定可能改变，重新设置通道参数
-            # self.setOSCChannel(inputChannel,outputChannel,self.syncChannel,self.sample_method,self.average_times,freq)
-            channel_scale=self.getChannelScale(channel)
-        # used to be used in PyBode, for some reason, now deprecated
-        loopCounter = 0
-        # 自动调整量程，直到读数在合理范围内
-        while((voltage<2*channel_atte or voltage>6*channel_atte) and loopCounter<max_try_times):
-            print("Auto adjusting voltage scale, voltage is "+str(voltage)+",scale is "+str(channel_scale)+", Freq is "+str(freq))
-            time.sleep(sample_delay)
-            voltage=self.getvoltage(channel,wave_parameter.Peak2Peak)
-            # 如果超量程读数出错，采用有效值重新计算
-            if(voltage>1e10):
-                voltage=self.getvoltage(channel,wave_parameter.rms)*4*1.414
-            channel_scale = voltageScaleLimiter(voltage/4,channel_atte,freq)
-            self.setChannelScale(channel,channel_scale)
-            loopCounter = loopCounter+1
-        time.sleep(sample_delay)
-        voltage=self.getvoltage(channel,items)
-        return voltage
-
-    def freq(self,channel:channel_number):
-        cmd = ":MEAS:ITEM? FREQ,"+channel.value
-        return float(self.instr.query(cmd))
-
     def getphase(self,channelA:channel_number,channelB:channel_number):
         cmd = ":MEAS:ITEM? RRPH,"+channelA.value+","+channelB.value
         return float(self.instr.query(cmd))
     
-    def phase(self,channelA:channel_number,channelB:channel_number):
-        max_try_times = 5
-        phase=-1*self.getphase(channelA,channelB)
-        while(phase>360 or phase <-360):
-            phase=-1*self.getphase(channelA,channelB)
-        loopCounter = 0
-        while(phase > 180 or phase<-180 and loopCounter<max_try_times):
-            phase=-1*self.getphase(channelA,channelB)
-            loopCounter = loopCounter + 1
-        if(loopCounter >= max_try_times):
-            phase = 0
-        return phase
-
     def saveChanneltoFile(self,\
         file_name:str,channel:channel_number,\
         data_mode:memory_store_method=memory_store_method.screen_only,\
@@ -145,7 +157,7 @@ class MSO5000:
                 self.instr.write(":WAV:MODE NORM")
                 self.instr.write(":WAV:POIN "+str(memory_length))
                 self.instr.write(":WAV:FORMAT ASCII")
-                data_line=self.instr.ask(":WAV:DATA?")
+                data_line=self.instr.query(":WAV:DATA?")
                 data_point=data_line.split(",")
                 f.write("Voltage\r\n")
                 data_point[0]=data_point[0][11:]
@@ -158,7 +170,7 @@ class MSO5000:
                 self.instr.write(":STOP")
                 print("start time:")
                 print(time.time())
-                data_line=self.instr.ask(":WAV:DATA?")
+                data_line=self.instr.query(":WAV:DATA?")
                 print(time.time())
                 print(data_line)
                 data_point=data_line.split(",")
@@ -173,8 +185,8 @@ class MSO5000:
         samplemode:sample_method=sample_method.normal):
         self.instr.write(":ACQ:TYPE "+samplemode.value)
         self.instr.write(":ACQ:MDEP "+memdepth.value)
-        # print("Memory Depth of "+self.model+" locates at "+self.addr+" set to "+self.instr.ask(":ACQ:MDEP?"))
-        # print("Acquire Mode of "+self.model+" locates at "+self.addr+" set to "+self.instr.ask(":ACQ:TYPE?"))
+        # print("Memory Depth of "+self.model+" locates at "+self.addr+" set to "+self.instr.query(":ACQ:MDEP?"))
+        # print("Acquire Mode of "+self.model+" locates at "+self.addr+" set to "+self.instr.query(":ACQ:TYPE?"))
         time.sleep(1)
 
     def getScreenshoot(self,file_name:str):
@@ -191,13 +203,13 @@ class MSO5000:
         self.instr.write(":"+channel.value+":OFFS "+str(offset))
 
     def getChannelScale(self,channel:channel_number):
-        return float(self.instr.ask(":"+channel.value+":SCAL?"))
+        return float(self.instr.query(":"+channel.value+":SCAL?"))
     
     def setChannelScale(self,channel:channel_number,scale):
         self.instr.write(":"+channel.value+":SCAL "+str(scale))
     
     def getTimebaseScale(self):
-        return float(self.instr.ask(":TIM:SCAL?"))
+        return float(self.instr.query(":TIM:SCAL?"))
     
     def setChannelCouple(self,channel:channel_number,couple:couple_type):
         self.instr.write(":"+channel.value+":COUP "+couple.value)
@@ -219,7 +231,7 @@ class MSO5000:
         self.instr.write(":"+channel.value+":UNIT "+unit)
     
     def getChannelAtte(self,channel:channel_number):
-        Atte=self.instr.ask(":"+channel.value+":PROB?")
+        Atte=self.instr.query(":"+channel.value+":PROB?")
         return float(Atte)
 
     def _setup_port(self):

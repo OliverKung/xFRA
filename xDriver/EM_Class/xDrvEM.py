@@ -172,7 +172,7 @@ class PyBode():
             phase=m_instru.phase(inputChannel,outputChannel)
 
             gain=20*math.log(voltage2/voltage1,10)
-            print(f"Freq: {freq} Hz, Gain: {gain} dB, Phase: {phase} degree")
+            # print(f"Freq: {freq} Hz, Gain: {gain} dB, Phase: {phase} degree")
             df.loc[len(df.index)]=[freq,gain,phase]
             # f.close()
 
