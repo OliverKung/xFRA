@@ -152,29 +152,29 @@ class PyBode():
         counter = 1
 
         filename=self.output_file
-        with open(".\\temp\\datafilename.txt","w") as f:
-            f.write(filename)
-        with open(".\\ExampleData\\"+filename,"w") as f:
-            for freq in tqdm(freq_list):
-                Ampilitude=amplitude_list[counter-1]
-                counter = counter + 1
-                # 设置频率和幅度
-                e_instru.set_freq_amp(freq,Ampilitude,ExcitationChannel)
-                # 设置同步触发时的方波频率
-                if(self.syncTriggerEnable == True):
-                    freqSquare=freq
-                    while(freqSquare>e_instru.getMaxSquareWaveformFreq()):# 获取最大方波输出频率
-                        freqSquare=freqSquare/2
-                    e_instru.set_freq_amp(freqSquare,1,syncTrigger)    #set signal source
+        # with open(".\\temp\\datafilename.txt","w") as f:
+            # f.write(filename)
+        # with open(".\\ExampleData\\"+filename,"w") as f:
+        for freq in tqdm(freq_list):
+            Ampilitude=amplitude_list[counter-1]
+            counter = counter + 1
+            # 设置频率和幅度
+            e_instru.set_freq_amp(freq,Ampilitude,ExcitationChannel)
+            # 设置同步触发时的方波频率
+            if(self.syncTriggerEnable == True):
+                freqSquare=freq
+                while(freqSquare>e_instru.getMaxSquareWaveformFreq()):# 获取最大方波输出频率
+                    freqSquare=freqSquare/2
+                e_instru.set_freq_amp(freqSquare,1,syncTrigger)    #set signal source
 
-                voltage1=m_instru.voltage(inputChannel,wave_parameter.RMS,freq)
-                voltage2=m_instru.voltage(outputChannel,wave_parameter.RMS,freq)
-                phase=m_instru.phase(inputChannel,outputChannel)
+            voltage1=m_instru.voltage(inputChannel,wave_parameter.RMS,freq)
+            voltage2=m_instru.voltage(outputChannel,wave_parameter.RMS,freq)
+            phase=m_instru.phase(inputChannel,outputChannel)
 
-                gain=20*math.log(voltage2/voltage1,10)
-
-                df.loc[len(df.index)]=[freq,gain,phase]
-            f.close()
+            gain=20*math.log(voltage2/voltage1,10)
+            print(f"Freq: {freq} Hz, Gain: {gain} dB, Phase: {phase} degree")
+            df.loc[len(df.index)]=[freq,gain,phase]
+            # f.close()
 
     def setChannel(self,excitionchannel,inputchannel,outputchannel,\
                    synctrigger,syncchannel,samplemethod,averageTimes):
@@ -239,14 +239,6 @@ class PyBode():
             return
 
 # -------------------- 主流程 --------------------
-# Meas = load_device_class("Measurement", m_model)   # 测量类
-# Exct = load_device_class("Excitation", e_model)    # 激励类
-
-# # 演示：实例化并打印
-# meas_inst = Meas()
-# exct_inst = Exct()
-# print("测量设备实例:", meas_inst)
-# print("激励设备实例:", exct_inst)
 if __name__=="__main__":
     args = parse_args()
     #arguments correction check
@@ -309,8 +301,12 @@ if __name__=="__main__":
             syncChannel=channel
 
     uPyBode.setChannel(excitionChannel,inputChannel,outputChannel,\
-                       syncTrigger,syncChannel,sampleMethod,args.average_times)
-
-    uPyBode.run(start_freq,end_freq,sweep_points,source_amp\
-                ,ExcitationChannel=excitionChannel,inputChannel=inputChannel,outputChannel=outputChannel,\
-                syncTrigger=syncTrigger)
+                       syncTrigger,syncChannel,sampleMethod,average)
+    uPyBode.generate_freq_sourcelevel_list(start_freq,end_freq,sweep_type,sweep_points,source_amp,variable_amp,variable_amp_freq)
+    uPyBode.setOutputFile(output_file)
+    uPyBode.run(\
+        excitionChannel,\
+        inputChannel,\
+        outputChannel,\
+        syncTrigger\
+    )

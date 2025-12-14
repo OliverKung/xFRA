@@ -114,11 +114,11 @@ class MSO5000:
 
     def freq(self,channel:channel_number):
         cmd = ":MEAS:ITEM? FREQ,"+channel.value
-        return float(self.instr.ask(cmd))
+        return float(self.instr.query(cmd))
 
     def getphase(self,channelA:channel_number,channelB:channel_number):
         cmd = ":MEAS:ITEM? RRPH,"+channelA.value+","+channelB.value
-        return float(self.instr.ask(cmd))
+        return float(self.instr.query(cmd))
     
     def phase(self,channelA:channel_number,channelB:channel_number):
         max_try_times = 5
