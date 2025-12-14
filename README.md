@@ -31,9 +31,14 @@ GUI（xFRA）基于PyQt编写。
 - [X] Driver for LibreVNA
 - [X] Driver for SVA1000X
 - [ ] Driver for OSC+AFG
-    - [ ] 根据输入参数，重载Module
+    - [X] 根据输入参数，重载Module
+    - [X] 基本测量功能的实现，MSO5000+SDG2000X已实现
+    - [X] 兼容TCP/IP Socket、Standard VISA、Serial的统一化仪器控制接口
+    - [ ] 嵌入进度条
+    - [ ] GUI自动读取驱动参数，并引入基本的通道设置功能
 ## Bug List
 - [X] SVA1000X驱动在每次改变测试设置的时候第一次数据输出会卡一次，采集到的数据为全0
 ## update log
 2025年12月3日：里程碑，完成了大多数的xConv功能和GUI功能的开发，开始进行xDriver的开发
 2025年12月6日：里程碑，完成了GUI基本功能的开发，可以自动测量并刷新，完成了SVA1000X和LibreVNA的驱动开发。
+2025年12月15日：里程碑，移植并理顺了原先PyBode项目的逻辑代码，并完成了MSO5000和SDG2000X的驱动
