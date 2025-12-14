@@ -129,7 +129,7 @@ class MSO5000:
         while(phase > 180 or phase<-180 and loopCounter<max_try_times):
             phase=-1*self.getphase(channelA,channelB)
             loopCounter = loopCounter + 1
-        if(loopCounter >= loopCounter):
+        if(loopCounter >= max_try_times):
             phase = 0
         return phase
 
