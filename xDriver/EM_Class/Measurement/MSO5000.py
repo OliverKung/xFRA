@@ -69,15 +69,19 @@ class MSO5000:
             sample_delay=1 if 0.1>6*4*1/freq*2**self.average_times else 6*4*1/freq*2**self.average_times
         return sample_delay
 
-    def voltage(self,channel:channel_number,items:wave_parameter):
+    def voltage(self,channel:channel_number,items:wave_parameter,freqIn=None):
         max_try_times = 5
         loopcounter = 0
-        voltage=self.getvoltage(channel,items)
-        freq = self.freq(channel)
+        voltage=self.getvoltage(channel,wave_parameter.Peak2Peak)
+        if freqIn is None:
+            freq = self.freq(channel)
+        else:
+            freq = freqIn
+        self.setTimebaseScale(0.25*1/freq)
         channel_atte=self.getChannelAtte(channel)
         channel_scale=self.getChannelScale(channel)
         sample_delay=self.getSampleDelay(freq)
-        # Auto scale for input channel when voltage is too large or too small
+        # Auto scale for input channel when voltage is too large
         while(voltage>channel_scale*8 and loopcounter<max_try_times):#When amplitude is too large, auto scale
             print("CH1 voltage scale too large, voltage is "+str(voltage)+",scale is "+str(channel_scale)+", Freq is "+str(freq))
             self.setChannelScale(channel,channel_scale*8)
@@ -86,34 +90,48 @@ class MSO5000:
             channel_scale = voltageScaleLimiter(channel_scale,channel_atte,freq)
             voltage=self.getvoltage(channel,wave_parameter.Peak2Peak)
             loopcounter=loopcounter+1
+        # 当调整次数过多，重新进行一次自动调节
+        if loopcounter==max_try_times:
+            self.autoscale()
+            # autoscale之后，示波器通道设定可能改变，重新设置通道参数
+            # self.setOSCChannel(inputChannel,outputChannel,self.syncChannel,self.sample_method,self.average_times,freq)
+            channel_scale=self.getChannelScale(channel)
+        # used to be used in PyBode, for some reason, now deprecated
         loopCounter = 0
-        # 当幅度过大的时候采用RMS代替Peak值
+        # 自动调整量程，直到读数在合理范围内
         while((voltage<2*channel_atte or voltage>6*channel_atte) and loopCounter<max_try_times):
             time.sleep(sample_delay)
             voltage=self.getvoltage(channel,wave_parameter.Peak2Peak)
+            # 如果超量程读数出错，采用有效值重新计算
             if(voltage>1e10):
                 voltage=self.getvoltage(channel,wave_parameter.rms)*4*1.414
             channel_scale = voltageScaleLimiter(voltage/4,channel_atte,freq)
-            self.setChannelScale(channel,channel_scale)#AutoScale when signal is too small
+            self.setChannelScale(channel,channel_scale)
             loopCounter = loopCounter+1
-        
-        # if loopcounter==max_try_times:
-        #     self.autoscale()
-        #     self.setOSCChannel(inputChannel,outputChannel,self.syncChannel,self.sample_method,self.average_times,freq)
-        #     print(channel1_scale)
-        #     channel1_scale=self.getChannelScale(inputChannel)
-        #     print(channel1_scale)
-        # used to be used in PyBode, for some reason, now deprecated
+        time.sleep(sample_delay)
+        voltage=self.getvoltage(channel,items)
         return voltage
-
 
     def freq(self,channel:channel_number):
         cmd = ":MEAS:ITEM? FREQ,"+channel.value
         return float(self.instr.ask(cmd))
 
-    def phase(self,channelA:channel_number,channelB:channel_number):
+    def getphase(self,channelA:channel_number,channelB:channel_number):
         cmd = ":MEAS:ITEM? RRPH,"+channelA.value+","+channelB.value
         return float(self.instr.ask(cmd))
+    
+    def phase(self,channelA:channel_number,channelB:channel_number):
+        max_try_times = 5
+        phase=-1*self.getphase(channelA,channelB)
+        while(phase>360 or phase <-360):
+            phase=-1*self.getphase(channelA,channelB)
+        loopCounter = 0
+        while(phase > 180 or phase<-180 and loopCounter<max_try_times):
+            phase=-1*self.getphase(channelA,channelB)
+            loopCounter = loopCounter + 1
+        if(loopCounter >= loopCounter):
+            phase = 0
+        return phase
 
     def saveChanneltoFile(self,\
         file_name:str,channel:channel_number,\

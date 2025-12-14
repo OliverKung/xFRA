@@ -145,19 +145,12 @@ class PyBode():
 
         freq_list=self.freq_list
         amplitude_list=self.amplitude_list
-        totalPoints=len(freq_list)
 
         df=pd.DataFrame({}, columns=['freq', 'gain', 'phase'])
 
         m_instru.setTimebaseScale(10)
-
-        # 读取初始状态的量程和衰减
-        channel1_scale=m_instru.getChannelScale(inputChannel)
-        channel2_scale=m_instru.getChannelScale(outputChannel)
         counter = 1
 
-        channel1_atte = m_instru.getChannelAtte(inputChannel)
-        channel2_atte = m_instru.getChannelAtte(outputChannel)
         filename=self.output_file
         with open(".\\temp\\datafilename.txt","w") as f:
             f.write(filename)
@@ -165,11 +158,6 @@ class PyBode():
             for freq in tqdm(freq_list):
                 Ampilitude=amplitude_list[counter-1]
                 counter = counter + 1
-                # 设置计算采样延时
-                if(self.syncTriggerEnable == False):
-                    sample_delay=0.1 if 0.1>4*1/freq*2**self.average_times else 4*1/freq*2**self.average_times
-                else:
-                    sample_delay=1 if 0.1>6*4*1/freq*2**self.average_times else 6*4*1/freq*2**self.average_times
                 # 设置频率和幅度
                 e_instru.set_freq_amp(freq,Ampilitude,ExcitationChannel)
                 # 设置同步触发时的方波频率
@@ -178,38 +166,13 @@ class PyBode():
                     while(freqSquare>e_instru.getMaxSquareWaveformFreq()):# 获取最大方波输出频率
                         freqSquare=freqSquare/2
                     e_instru.set_freq_amp(freqSquare,1,syncTrigger)    #set signal source
-            
-                # 设置示波器时间幅度
-                m_instru.setTimebaseScale(0.25*1/freq)
 
-                # 等待测量稳定
-                time.sleep(sample_delay)
-                
-                # 读取电压值
-                voltage1=m_instru.voltage(inputChannel,wave_parameter.Peak2Peak)
-                voltage2=m_instru.voltage(outputChannel,wave_parameter.Peak2Peak)
+                voltage1=m_instru.voltage(inputChannel,wave_parameter.RMS,freq)
+                voltage2=m_instru.voltage(outputChannel,wave_parameter.RMS,freq)
+                phase=m_instru.phase(inputChannel,outputChannel)
 
-                time.sleep(sample_delay) #wait for measure
-
-                voltage1=m_instru.voltage(inputChannel,wave_parameter.RMS)
-# stop here 2025年12月14日
-                time.sleep(sample_delay)
-                voltage2=m_instru.voltage(outputChannel,wave_parameter.RMS)
-                print("freq:",freq)
-                print("voltage1:",voltage1)
-                print("voltage2:",voltage2)
-                phase=-1*m_instru.phase(inputChannel,outputChannel)
-                while(phase>360 or phase <-360):
-                    phase=-1*m_instru.phase(inputChannel,outputChannel)
-                loopCounter = 0
-                while(phase > 180 or phase<-180 and loopCounter<max_try_times):
-                    phase=-1*m_instru.phase(inputChannel,outputChannel)
-                    loopCounter = loopCounter + 1
-                if(loopCounter >= 20):
-                    phase = 0
                 gain=20*math.log(voltage2/voltage1,10)
-                # print(str(freq)+","+str(voltage1)+","+str(voltage2)+","+str(gain)+","+str(phase))
-                f.write(str(freq)+","+str(voltage1)+","+str(voltage2)+","+str(gain)+","+str(phase)+","+str(0.5*Ampilitude/math.sqrt(2))+"\r")
+
                 df.loc[len(df.index)]=[freq,gain,phase]
             f.close()
 
