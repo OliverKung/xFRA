@@ -298,6 +298,9 @@ class SDS6000:
 
 if __name__ == "__main__":
     # 测试 SDS6000 类
-    mso = SDS6000(tunnel="visa", address="TCPIP::192.168.1.120::INSTR")
+    mso = SDS6000(tunnel="visa", address="TCPIP::192.168.1.119::INSTR")
     # mso = SDS6000(tunnel="socket", address="192.168.1.120:5555")
-    mso.autoscale()
+    # mso.autoscale()
+    mso.instr.write(":MEAS:SIMP:ITEM PKPK,ON")
+    mso.instr.write(":MEAS:SIMP:SOUR C1")
+    print("CH1 Voltage Vpp:", mso.instr.query(":MEAS:SIMP:VAL? PKPK"))
