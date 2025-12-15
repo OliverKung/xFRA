@@ -83,12 +83,20 @@ class SDG2000X:
         self.instr.write("SYST:BEEP ON")
         self.instr.write("SYST:BEEP OFF")
     
-    def set_freq_amp(self,freq,amplitude,channel:channel_number):
+    def set_freq_amp(self,freq,amplitude,channel:channel_number,unit:waveform_unit = waveform_unit.Vpp):
+        if unit == waveform_unit.Vpp:
+            amplitude_process = amplitude * 2
+        elif unit == waveform_unit.Vrms:
+            amplitude_process = amplitude * 2 * (2**0.5)
+        elif unit == waveform_unit.dBm:
+            amplitude_process = (10**(amplitude/20))*0.6324555320336759*2*2
+        else:
+            raise ValueError("SDG2000X: 不支持的幅度单位: " + unit)
         if(channel == channel_number.ch1):
             channel_Str="C1"
         else:
             channel_Str="C2"
-        self.instr.write(channel_Str+":BSWV AMP,"+str(amplitude))
+        self.instr.write(channel_Str+":BSWV AMP,"+str(amplitude_process))
         self.instr.write(channel_Str+":BSWV FRQ,"+str(freq))
 
     def set_waveform_type(self,channel:channel_number,waveform:waveform_type):

@@ -1,5 +1,9 @@
-
 from enum import Enum
+
+class waveform_unit(Enum):
+    Vpp = "VPP"
+    Vrms = "VRMS"
+    dBm = "DBM"
 
 class channel_number(Enum):
     channel1="channel1"

@@ -57,11 +57,12 @@ class MSO5000:
     def voltage(self,channel:channel_number,items:wave_parameter,freqIn=None):
         max_try_times = 5
         loopcounter = 0
-        voltage=self.getvoltage(channel,wave_parameter.Peak2Peak)
         if freqIn is None:
             freq = self.freq(channel)
         else:
             freq = freqIn
+        time.sleep(self.getSampleDelay(freq))
+        voltage=self.getvoltage(channel,wave_parameter.Peak2Peak)
         self.setTimebaseScale(0.25*1/freq)
         channel_atte=self.getChannelAtte(channel)
         channel_scale=self.getChannelScale(channel)
@@ -118,10 +119,45 @@ class MSO5000:
         if(loopCounter >= max_try_times):
             phase = 0
         return phase
+
+    # 设置采样模式
+    def setSampleMode(self,samplemode:sample_method):
+        self.setAcquire(samplemode=samplemode)
+
+    # 设置耦合方式
+    def setChannelCouple(self,channel:channel_number,couple:couple_type):
+        self.instr.write(":"+channel.value+":COUP "+couple.value)
+
+    # 设置触发通道
+    def setTriggerChannel(self,channel:channel_number):
+        self.instr.write(":TRIG:EDGE:SOUR "+channel.value)
+
+    # 设置平均次数
+    def setAverageTimes(self,averagetimes):
+        self.instr.write(":ACQ:AVER "+str(2**averagetimes))
+        self.average_times=averagetimes 
+
+    # 设置通道衰减
+    def setChannelAtte(self,channel:channel_number,atte):
+        self.instr.write(":"+channel.value+":PROB "+atte)
     
-    # end----------------- 测量类标准接口 --------------------
-    # -------------------- 设置类接口 --------------------
-    # stop at here 2025年12月15日 00点27分
+    # 设置带宽单位
+    def setChannelUnit(self,channel:channel_number,unit:str):
+        self.instr.write(":"+channel.value+":UNIT "+unit)\
+    
+    # 设置同步触发
+    def setSynctrigger(self,enable:bool):
+        if enable:
+            self.synctriggerEnable = True
+        else:
+            self.synctriggerEnable = False
+
+    # end----------------- 设置类接口 --------------------
+    # -------------------- 回读类接口 --------------------
+
+    # end----------------- 回读类接口 --------------------
+    # end----------------- xDrvEM 标准接口 --------------------
+
     def dutyCycle(self,channel:channel_number):
         cmd = ":MEAS:ITEM? PDUT"+","+channel.value
         return float(self.instr.query(cmd))
@@ -129,12 +165,6 @@ class MSO5000:
     def getvoltage(self,channel:channel_number,items:wave_parameter):
         cmd = ":MEAS:ITEM? "+items.value+","+channel.value
         return float(self.instr.query(cmd))
-    
-    def setSynctrigger(self,enable:bool):
-        if enable:
-            self.synctriggerEnable = True
-        else:
-            self.synctriggerEnable = False
 
     def getSampleDelay(self,freq):
         if(self.synctriggerEnable == False):
@@ -185,8 +215,6 @@ class MSO5000:
         samplemode:sample_method=sample_method.normal):
         self.instr.write(":ACQ:TYPE "+samplemode.value)
         self.instr.write(":ACQ:MDEP "+memdepth.value)
-        # print("Memory Depth of "+self.model+" locates at "+self.addr+" set to "+self.instr.query(":ACQ:MDEP?"))
-        # print("Acquire Mode of "+self.model+" locates at "+self.addr+" set to "+self.instr.query(":ACQ:TYPE?"))
         time.sleep(1)
 
     def getScreenshoot(self,file_name:str):
@@ -210,25 +238,9 @@ class MSO5000:
     
     def getTimebaseScale(self):
         return float(self.instr.query(":TIM:SCAL?"))
-    
-    def setChannelCouple(self,channel:channel_number,couple:couple_type):
-        self.instr.write(":"+channel.value+":COUP "+couple.value)
-    
-    def setTriggerChannel(self,channel:channel_number):
-        self.instr.write(":TRIG:EDGE:SOUR "+channel.value)
-    
+
     def setTriggerLevel(self,voltage):
         self.instr.write(":TRIG:EDGE:LEV "+str(voltage))
-
-    def setAverageTimes(self,averagetimes):
-        self.instr.write(":ACQ:AVER "+str(2**averagetimes))
-        self.average_times=averagetimes
-    
-    def setChannelAtte(self,channel:channel_number,atte):
-        self.instr.write(":"+channel.value+":PROB "+atte)
-    
-    def setChannelUnit(self,channel:channel_number,unit:str):
-        self.instr.write(":"+channel.value+":UNIT "+unit)
     
     def getChannelAtte(self,channel:channel_number):
         Atte=self.instr.query(":"+channel.value+":PROB?")

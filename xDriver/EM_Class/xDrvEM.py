@@ -49,7 +49,7 @@ def parse_args():
     parser.add_argument('--sync-trigger', type=str,default="channel2",help="the sync trigger function generator sync number, default is \"channel2\"")
     parser.add_argument('--sync-channel', type=str,default="channel3",help="the sync trigger channel number, default is \"channel3\"")
     parser.add_argument('--sync-trigger-enable', type=str,default="false",help="sync Trigger function enable, default is flase")
-
+    parser.add_argument('--settling-time', type=float, default=0.0, help='Settling time after frequency change in seconds')
     return parser.parse_args()
 
 # -------------------- 辅助函数 --------------------
@@ -134,11 +134,15 @@ class PyBode():
     def setOutputFile(self,outputfile):
         self.output_file = outputfile
 
+    def setSettlingTime(self,settlingtime):
+        self.settling_time = settlingtime
+
     def run(self,\
             ExcitationChannel:channel_number,\
             inputChannel:channel_number,\
             outputChannel:channel_number,\
             syncTrigger:channel_number,\
+            unit:waveform_unit = waveform_unit.Vpp
             ):
         m_instru=self.m_instru
         e_instru=self.e_instru
@@ -151,15 +155,12 @@ class PyBode():
         m_instru.setTimebaseScale(10)
         counter = 1
 
-        filename=self.output_file
-        # with open(".\\temp\\datafilename.txt","w") as f:
-            # f.write(filename)
-        # with open(".\\ExampleData\\"+filename,"w") as f:
         for freq in tqdm(freq_list):
             Ampilitude=amplitude_list[counter-1]
             counter = counter + 1
             # 设置频率和幅度
-            e_instru.set_freq_amp(freq,Ampilitude,ExcitationChannel)
+            e_instru.set_freq_amp(freq,Ampilitude,ExcitationChannel,unit)
+            time.sleep(self.settling_time)
             # 设置同步触发时的方波频率
             if(self.syncTriggerEnable == True):
                 freqSquare=freq
@@ -171,10 +172,13 @@ class PyBode():
             voltage2=m_instru.voltage(outputChannel,wave_parameter.RMS,freq)
             phase=m_instru.phase(inputChannel,outputChannel)
 
-            gain=20*math.log(voltage2/voltage1,10)
-            # print(f"Freq: {freq} Hz, Gain: {gain} dB, Phase: {phase} degree")
+            gain=voltage2/voltage1
+            # print("Freq: %.2f Hz, Gain: %.4f, Phase: %.2f deg"%(freq,gain,phase))
+            # print("Input RMS Voltage: %.4f V, Output RMS Voltage: %.4f V"%(voltage1,voltage2))
+            # 将数据添加到DataFrame中
             df.loc[len(df.index)]=[freq,gain,phase]
             # f.close()
+        return df
 
     def setChannel(self,excitionchannel,inputchannel,outputchannel,\
                    synctrigger,syncchannel,samplemethod,averageTimes):
@@ -271,6 +275,7 @@ if __name__=="__main__":
     sync_trigger = args.sync_trigger # set during PyBode run and setChannel
     sync_channel = args.sync_channel # set during PyBode run and setChannel
     sync_trigger_enable = args.sync_trigger_enable # set during PyBode run and setChannel
+    settling_time = args.settling_time # not set yet
 
     uPyBode=PyBode(e_model,m_model,e_addr,m_addr,e_tunnel,m_tunnel)
 
@@ -287,6 +292,7 @@ if __name__=="__main__":
     for method in sample_method:
         if(args.sample_method.lower() == method.name):
             sampleMethod=method
+    print("Sample Method:",sampleMethod)
     # -------- 设置通道号 --------
     for channel in channel_number:
         if(excition_channel.lower() == channel.name):
@@ -299,14 +305,50 @@ if __name__=="__main__":
             syncTrigger=channel
         if(sync_channel.lower() == channel.name):
             syncChannel=channel
+    # -------- 设置激励单位 --------
+    for unit in waveform_unit:
+        if(source_amp_unit.upper() == unit.value):
+            sourceUnit=unit
 
+    # -------- 设置通道参数 --------
     uPyBode.setChannel(excitionChannel,inputChannel,outputChannel,\
-                       syncTrigger,syncChannel,sampleMethod,average)
+                       syncTrigger,syncChannel,sampleMethod,average_sample_times)
     uPyBode.generate_freq_sourcelevel_list(start_freq,end_freq,sweep_type,sweep_points,source_amp,variable_amp,variable_amp_freq)
+    uPyBode.setSettlingTime(settling_time)
     uPyBode.setOutputFile(output_file)
-    uPyBode.run(\
-        excitionChannel,\
-        inputChannel,\
-        outputChannel,\
-        syncTrigger\
-    )
+    print("Starting measurement...")
+    print("Average Measurement Times:",average)
+    # 运行n次测试取平均
+    data = uPyBode.run(\
+            excitionChannel,\
+            inputChannel,\
+            outputChannel,\
+            syncTrigger,\
+            sourceUnit
+        )
+    for i in range(average-1):
+        print(f"Starting average run {i+2} of {average}...")
+        data += uPyBode.run(\
+            excitionChannel,\
+            inputChannel,\
+            outputChannel,\
+            syncTrigger,\
+            sourceUnit
+        )
+    data = data / average
+    # 以S2P的格式保存数据到文件,按照S11 S21 S12 S22的格式保存，其中，S11和S22的幅度为1，相位为0，S21和S12的幅度和相位由测量结果决定
+    print("Saving data to file:",output_file)
+    with open(output_file,"w") as f:
+        f.write("! Touchstone file generated by xDrvEM.py\n")
+        f.write("# Hz S RI R 50\n")
+        f.write("! Hz ReS11 ImS11 ReS21 ImS21 ReS12 ImS12 ReS22 ImS22\n")
+        for index,row in data.iterrows():
+            freq=row['freq']
+            gain=row['gain']
+            phase=row['phase']
+            ReS21=gain*math.cos(math.radians(phase))
+            ImS21=gain*math.sin(math.radians(phase))
+            ReS12=ReS21
+            ImS12=ImS21
+            f.write(f"{freq:.6f} 1.0000 0.0000 {ReS21:.6f} {ImS21:.6f} {ReS12:.6f} {ImS12:.6f} 1.0000 0.0000\n")
+        
