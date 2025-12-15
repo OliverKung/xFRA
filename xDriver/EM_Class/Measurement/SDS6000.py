@@ -1,0 +1,303 @@
+# xDrviver/EM_Class/Excitation/SDS6000.py
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# achieve around 2s/pts for 1kHz to 100kHz 100pt no average with visa connection and 1.5s/pts for socket connection
+# xDrvSetting begin
+# device-type Measurement
+# model SDS6000
+# tunnel visa socket serial
+# average yes
+# min-freq 0
+# max-freq 350000000
+# channel 4
+# channelAttn 0.0001 0.0002 0.0005 0.001 0.002 0.005 0.01 0.02 0.05 0.1 0.2 0.5 1 2 5 10 20 50 100 200 500 1000 2000 5000 10000 20000 50000
+# channelCoupling DC AC GND
+# channelBandwidth Full 200000000 100000000 20000000
+# samplemode norm peak aver hires
+# xDrvSetting end
+#python LibreVNA.py --device-address 192.168.1.100 --start-freq 1e6 --stop-freq 1e9 --sweep-type LIN --sweep-points 501 --ifbw 1e3 --source-level -10 --averages 3 --output-file meas.s2p
+
+import sys
+sys.path.append('./')
+from custom_tunnel import instru_socket
+from custom_tunnel import instru_serial
+import socket,serial
+import pyvisa
+import time
+from enum import Enum
+sys.path.append('./xDriver/EM_Class/')
+from typedef import *
+
+def voltageScaleLimiter(voltagescale,channel_atte,freq):
+    if(voltagescale>10):
+        return 10*channel_atte
+    if(voltagescale<1e-3 and freq < 20e6):
+        return 1e-3*channel_atte
+    if(voltagescale<2e-3 and freq > 20e6):
+        return 2e-3*channel_atte
+    return voltagescale
+
+class SDS6000:
+    def __init__(self,tunnel = "socket", address = ""):
+        self.tunnel = tunnel.lower()
+        self.address = address
+        self.instr = None
+        self.synctriggerEnable = False
+        self.average_times = 1
+        self._setup_port()
+    
+    # -------------------- xDrvEM 标准接口 --------------------
+    # -------------------- 测量类标准接口 --------------------
+    
+    # 自动调节量程
+    def autoscale(self):
+        self.instr.write(":AUT")
+    
+    # 读取并自动调整电压量程
+    def voltage(self,channel:channel_number,items:wave_parameter,freqIn=None):
+        max_try_times = 5
+        loopcounter = 0
+        if freqIn is None:
+            freq = self.freq(channel)
+        else:
+            freq = freqIn
+        time.sleep(self.getSampleDelay(freq))
+        voltage=self.getvoltage(channel,wave_parameter.Peak2Peak)
+        self.setTimebaseScale(0.25*1/freq)
+        channel_atte=self.getChannelAtte(channel)
+        channel_scale=self.getChannelScale(channel)
+        sample_delay=self.getSampleDelay(freq)
+        # print("Sample delay set to "+str(sample_delay)+" s for freq "+str(freq)+" Hz with average times "+str(self.average_times))
+        # Auto scale for input channel when voltage is too large
+        while(voltage>channel_scale*8 and loopcounter<max_try_times):#When amplitude is too large, auto scale
+            # print("CH1 voltage scale too large, voltage is "+str(voltage)+",scale is "+str(channel_scale)+", Freq is "+str(freq))
+            self.setChannelScale(channel,channel_scale*8)
+            time.sleep(self.getSampleDelay(freq))
+            channel_scale=channel_scale*8
+            channel_scale = voltageScaleLimiter(channel_scale,channel_atte,freq)
+            voltage=self.getvoltage(channel,wave_parameter.Peak2Peak)
+            loopcounter=loopcounter+1
+        # 当调整次数过多，重新进行一次自动调节
+        if loopcounter==max_try_times:
+            # print("voltage scale auto adjust failed, autoscale once. voltage is "+str(voltage)+",scale is "+str(channel_scale)+", Freq is "+str(freq))
+            self.autoscale()
+            # autoscale之后，示波器通道设定可能改变，重新设置通道参数
+            # self.setOSCChannel(inputChannel,outputChannel,self.syncChannel,self.sample_method,self.average_times,freq)
+            channel_scale=self.getChannelScale(channel)
+        # used to be used in PyBode, for some reason, now deprecated
+        loopCounter = 0
+        # 自动调整量程，直到读数在合理范围内
+        while((voltage<2*channel_scale or voltage>6*channel_scale) and loopCounter<max_try_times):
+            # print("Auto adjusting voltage scale, voltage is "+str(voltage)+",scale is "+str(channel_scale)+", Freq is "+str(freq))
+            time.sleep(sample_delay)
+            voltage=self.getvoltage(channel,wave_parameter.Peak2Peak)
+            # 如果超量程读数出错，采用有效值重新计算
+            if(voltage>1e10):
+                voltage=self.getvoltage(channel,wave_parameter.rms)*4*1.414
+            channel_scale = voltageScaleLimiter(voltage/4,channel_atte,freq)
+            self.setChannelScale(channel,channel_scale)
+            loopCounter = loopCounter+1
+        time.sleep(sample_delay)
+        voltage=self.getvoltage(channel,items)
+        return voltage
+
+    # 读取频率
+    def freq(self,channel:channel_number):
+        cmd = ":MEAS:ITEM? FREQ,"+channel.value
+        return float(self.instr.query(cmd))
+
+    # 读取相位差，范围-180~180度
+    def phase(self,channelA:channel_number,channelB:channel_number):
+        max_try_times = 5
+        phase=-1*self.getphase(channelA,channelB)
+        while(phase>360 or phase <-360):
+            phase=-1*self.getphase(channelA,channelB)
+        loopCounter = 0
+        while(phase > 180 or phase<-180 and loopCounter<max_try_times):
+            phase=-1*self.getphase(channelA,channelB)
+            loopCounter = loopCounter + 1
+        if(loopCounter >= max_try_times):
+            phase = 0
+        return phase
+
+    # 设置采样模式
+    def setSampleMode(self,samplemode:sample_method):
+        self.setAcquire(samplemode=samplemode)
+
+    # 设置耦合方式
+    def setChannelCouple(self,channel:channel_number,couple:couple_type):
+        self.instr.write(":"+channel.value+":COUP "+couple.value)
+
+    # 设置触发通道
+    def setTriggerChannel(self,channel:channel_number):
+        self.instr.write(":TRIG:EDGE:SOUR "+channel.value)
+
+    # 设置平均次数
+    def setAverageTimes(self,averagetimes):
+        self.instr.write(":ACQ:AVER "+str(2**averagetimes))
+        self.average_times=averagetimes 
+
+    # 设置通道衰减
+    def setChannelAtte(self,channel:channel_number,atte):
+        self.instr.write(":"+channel.value+":PROB "+atte)
+    
+    # 设置带宽单位
+    def setChannelUnit(self,channel:channel_number,unit:str):
+        self.instr.write(":"+channel.value+":UNIT "+unit)\
+    
+    # 设置同步触发
+    def setSynctrigger(self,enable:bool):
+        if enable:
+            self.synctriggerEnable = True
+        else:
+            self.synctriggerEnable = False
+
+    # end----------------- 设置类接口 --------------------
+    # -------------------- 回读类接口 --------------------
+
+    # end----------------- 回读类接口 --------------------
+    # end----------------- xDrvEM 标准接口 --------------------
+
+    def dutyCycle(self,channel:channel_number):
+        cmd = ":MEAS:ITEM? PDUT"+","+channel.value
+        return float(self.instr.query(cmd))
+    
+    def getvoltage(self,channel:channel_number,items:wave_parameter):
+        cmd = ":MEAS:ITEM? "+items.value+","+channel.value
+        return float(self.instr.query(cmd))
+
+    def getSampleDelay(self,freq):
+        if(self.synctriggerEnable == False):
+            sample_delay=0.1 if 0.1>4*1/freq*2**self.average_times else 4*1/freq*2**self.average_times
+        else:
+            sample_delay=1 if 0.1>6*4*1/freq*2**self.average_times else 6*4*1/freq*2**self.average_times
+        return sample_delay
+
+    def getphase(self,channelA:channel_number,channelB:channel_number):
+        cmd = ":MEAS:ITEM? RRPH,"+channelA.value+","+channelB.value
+        return float(self.instr.query(cmd))
+    
+    def saveChanneltoFile(self,\
+        file_name:str,channel:channel_number,\
+        data_mode:memory_store_method=memory_store_method.screen_only,\
+        memory_length:int=1000):
+        with open(file_name,"w") as f:
+            print("Store "+str(channel)+" "+str(memory_length)+" points data to "+file_name)
+            if(data_mode==memory_store_method.screen_only):
+                self.instr.write(":WAV:MODE NORM")
+                self.instr.write(":WAV:POIN "+str(memory_length))
+                self.instr.write(":WAV:FORMAT ASCII")
+                data_line=self.instr.query(":WAV:DATA?")
+                data_point=data_line.split(",")
+                f.write("Voltage\r\n")
+                data_point[0]=data_point[0][11:]
+                for data in data_point:
+                    f.write(data+"\r\n")
+            if(data_mode==memory_store_method.RAW_data):
+                self.instr.write(":WAV:MODE RAW")
+                self.instr.write(":WAV:POIN "+str(memory_length))
+                self.instr.write(":WAV:FORMAT ASCII")
+                self.instr.write(":STOP")
+                print("start time:")
+                print(time.time())
+                data_line=self.instr.query(":WAV:DATA?")
+                print(time.time())
+                print(data_line)
+                data_point=data_line.split(",")
+                f.write("Voltage\r\n")
+                data_point[0]=data_point[0][11:]# remove head meaning less bytes
+                for data in data_point:
+                    f.write(data+"\r\n")
+                self.instr.write(":RUN")
+            print(channel.value+" Data of "+self.model+" locates at "+self.addr+" saved to "+file_name)
+
+    def setAcquire(self,memdepth:memory_store_depth=memory_store_depth.depth_AUTO,\
+        samplemode:sample_method=sample_method.normal):
+        self.instr.write(":ACQ:TYPE "+samplemode.value)
+        self.instr.write(":ACQ:MDEP "+memdepth.value)
+        time.sleep(1)
+
+    def getScreenshoot(self,file_name:str):
+        with open(file_name,"wb") as image:
+            self.instr.write(":DISPlay:DATA?")
+            img=self.instr.read_raw()
+            image.write(img[11:])# remove head 11 meaning less bytes
+            image.close()
+
+    def setTimebaseScale(self,timebase_scale):
+        self.instr.write(":TIM:SCAL "+str(timebase_scale))
+    
+    def setChannelOffet(self,channel:channel_number,offset):
+        self.instr.write(":"+channel.value+":OFFS "+str(offset))
+
+    def getChannelScale(self,channel:channel_number):
+        return float(self.instr.query(":"+channel.value+":SCAL?"))
+    
+    def setChannelScale(self,channel:channel_number,scale):
+        self.instr.write(":"+channel.value+":SCAL "+str(scale))
+    
+    def getTimebaseScale(self):
+        return float(self.instr.query(":TIM:SCAL?"))
+
+    def setTriggerLevel(self,voltage):
+        self.instr.write(":TRIG:EDGE:LEV "+str(voltage))
+    
+    def getChannelAtte(self,channel:channel_number):
+        Atte=self.instr.query(":"+channel.value+":PROB?")
+        return float(Atte)
+
+    def _setup_port(self):
+        if self.tunnel == "socket":
+            print("SDS6000: 使用 Socket 方式连接，地址：", self.address)
+            # Socket 参考addr为192.168.1.1:5025，自动识别并建立通信端口
+            sock_addr = self.address.split(":")
+            ip = sock_addr[0]
+            port = 5025
+            if len(sock_addr) == 2:
+                port = int(sock_addr[1])
+            print(f"SDS6000: 连接到 IP={ip}, PORT={port}")
+            self.instr = instru_socket.instru_socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.instr.connect((ip, port))
+        elif self.tunnel == "visa":
+            print("SDS6000: 使用 visa 方式连接，地址：", self.address)
+            rm = pyvisa.ResourceManager()
+            self.instr = rm.open_resource(self.address)
+        elif self.tunnel == "serial":
+            print("SDS6000: 使用 serial 方式连接，地址：", self.address)
+            # Socket 参考addr为192.168.1.1:115200,8,n,1，自动识别并建立通信端口
+            serial_addr = self.address.split(":")
+            port = serial_addr[0]
+            baudrate = 115200
+            if len(serial_addr) >= 2:
+                baudrate = int(serial_addr[1])
+            bytesize = 8
+            parity = 'N'
+            stopbits = 1
+            if len(serial_addr) >= 5:
+                bytesize = int(serial_addr[2])
+                parity = serial.PARITY_NONE
+                if serial_addr[3] == 'E':
+                    parity = serial.PARITY_EVEN
+                elif serial_addr[3] == 'O':
+                    parity = serial.PARITY_ODD
+                stopbits = int(serial_addr[4])
+            print(f"SDS6000: 连接到 PORT={port}, BAUDRATE={baudrate}, BYTESIZE={bytesize}, PARITY={parity}, STOPBITS={stopbits}")
+            self.instr = instru_serial.instru_serial(port=port, baudrate=baudrate, bytesize=bytesize, parity=parity, stopbits=stopbits, timeout=1)
+        else:
+            raise ValueError("SDS6000: 不支持的通信方式: " + self.tunnel)
+        print("SDS6000: 连接成功")
+        idn = self.instr.query("*IDN?")
+        self.company = idn.split(",")[0]
+        self.model = idn.split(",")[1]
+        self.sn = idn.split(",")[2]
+        self.firmware = idn.split(",")[3]
+        print("SDS6000 IDN:", idn)
+        self.instr.write("SYST:BEEP ON")
+        self.instr.write("SYST:BEEP OFF")
+    
+
+if __name__ == "__main__":
+    # 测试 SDS6000 类
+    mso = SDS6000(tunnel="visa", address="TCPIP::192.168.1.120::INSTR")
+    # mso = SDS6000(tunnel="socket", address="192.168.1.120:5555")
+    mso.autoscale()
