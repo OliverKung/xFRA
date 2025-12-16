@@ -13,6 +13,15 @@ from basic_custom_widget.QLabelLineEdit import QLabelLineEdit
 from pathlib import Path
 import chardet
 
+class channelSet(QWidget):
+    def __init__(self):
+        super().__init__()
+        self._build_ui()
+
+    def _build_ui(self):
+        layout = QVBoxLayout(self)
+        self.setLayout(layout)
+
 class ControlWidget(QWidget):
     # 任何参数改动都发这个信号，dict 携带最新值
     params_changed = pyqtSignal(dict)
@@ -42,15 +51,20 @@ class ControlWidget(QWidget):
         self.device_e_model.setComboItems(["EM1000","EM2000"])
         self.device_m_address = QLabelLineEdit("M-Address")
         self.device_e_address = QLabelLineEdit("E-Address")
-        self.device_tunnel = QLabelComboBox("Tunnel")
-        self.device_tunnel.setComboItems(["VISA","Socket","Serial"])
+        self.device_m_tunnel = QLabelComboBox("M-Tunnel")
+        self.device_m_tunnel.setComboItems(["VISA","Socket","Serial"])
+        self.device_e_tunnel = QLabelComboBox("E-Tunnel")
+        self.device_e_tunnel.setComboItems(["VISA","Socket","Serial"])
 
         h.addWidget(self.device_type)
         h.addWidget(self.device_m_model)
         h.addWidget(self.device_m_address)
+        h.addWidget(self.device_m_tunnel)
         h.addWidget(self.device_e_model)
         h.addWidget(self.device_e_address)
-        h.addWidget(self.device_tunnel)
+        h.addWidget(self.device_e_tunnel)
+
+
     
         layout.addWidget(devgrp)
 
@@ -141,13 +155,16 @@ class ControlWidget(QWidget):
         srcgrp = QGroupBox("Attenuator")
         g = QVBoxLayout(srcgrp)
 
+
         self.receive1_att = QLabelComboBox("Recv 1")
         self.receive1_att.setComboItems(["0 dB", "10 dB","20 dB","30 dB","40 dB"])
         self.receive2_att = QLabelComboBox("Recv 2")
         self.receive2_att.setComboItems(["0 dB", "10 dB","20 dB","30 dB","40 dB"])
+        self.channelSetBtn = QPushButton("Channel Set")
 
         g.addWidget(self.receive1_att)
         g.addWidget(self.receive2_att)
+        g.addWidget(self.channelSetBtn)
 
         layout.addWidget(srcgrp)
         
@@ -177,6 +194,7 @@ class ControlWidget(QWidget):
 
     # ---------- 信号 ----------
     def _connect_signals(self):
+        self.channelSetBtn.clicked.connect(self._channelSetBtn_clicked)
         # 数值型控件
         for w in [self.sp_fstart, self.sp_fstop, self.sp_points, self.source_level, self.sp_fspan,self.sp_fcenter]:
             w.valueChanged.connect(self._notify)
@@ -187,7 +205,7 @@ class ControlWidget(QWidget):
         self.device_type.currentTextChanged.connect(self._device_model_refresh)
         self.device_m_model.currentTextChanged.connect(self._update_model_setting)
         # 下拉框
-        for w in [ self.cb_bw, self.level_unit_cb, self.receive1_att, self.receive2_att,self.device_type,self.device_m_model,self.device_e_model,self.device_tunnel]:
+        for w in [ self.cb_bw, self.level_unit_cb, self.receive1_att, self.receive2_att,self.device_type,self.device_m_model,self.device_e_model,self.device_m_tunnel]:
             w.currentTextChanged.connect(self._notify)
         # switch button
         for w in [self.sweep_log_switch, self.level_var_switch]:
@@ -230,6 +248,7 @@ class ControlWidget(QWidget):
             self.device_e_address.setEnabled(False)
             self.device_e_address.setVisible(False)
             self.device_e_model.setVisible(False)
+            self.device_e_tunnel.setVisible(False)
         elif dtype=="E-M":
             files_M = [f.stem for f in self.EM_M_path.glob('*.py') if f.is_file() and f.stem != '__init__']
             files_E = [f.stem for f in self.EM_E_path.glob('*.py') if f.is_file() and f.stem != '__init__']
@@ -237,6 +256,7 @@ class ControlWidget(QWidget):
             self.device_e_model.setEnabled(True)
             self.device_e_address.setVisible(True)
             self.device_e_model.setVisible(True)
+            self.device_e_tunnel.setVisible(True)
             self.device_m_model.setComboItems(files_M)
             self.device_e_model.setComboItems(files_E)
         if model in [self.device_m_model.itemText(i) for i in range(self.device_m_model.count())]:
@@ -269,7 +289,7 @@ class ControlWidget(QWidget):
                     if command.startswith('model'):
                         continue
                     elif command.startswith('tunnel'):
-                        self.device_tunnel.setComboItems(command.split(' ')[1:])
+                        self.device_m_tunnel.setComboItems(command.split(' ')[1:])
                     elif command.startswith('average'):
                         if command.split(' ')[1].lower()=='yes':
                             self.average_spinbox.setEnabled(True)
@@ -315,8 +335,20 @@ class ControlWidget(QWidget):
         elif self.device_type.currentText()=="E-M":
             if self.device_m_model.currentText() == "":
                 return
-            with open(self.EM_M_path / (self.device_m_model.currentText()+'.py'), 'r') as f:
-                settingLine = f.readlines()
+            with open(self.EM_M_path / (self.device_m_model.currentText()+'.py'), 'rb') as f:
+                raw_data = f.read()
+                detected = chardet.detect(raw_data)
+                encoding = detected['encoding']
+            with open(self.EM_M_path / (self.device_m_model.currentText()+'.py'), 'r',encoding=encoding) as f:
+                fileLines = f.readlines()
+                settingLine = []
+                for line in fileLines:
+                    if line.startswith('#'):
+                        settingLine.append(line)
+
+    def _channelSetBtn_clicked(self):
+        print("Channel Set clicked")
+        self._notify()
 
     def _notify(self):
         d = dict(
@@ -325,7 +357,7 @@ class ControlWidget(QWidget):
             device_type=self.device_type.currentText(),
             device_m_model=self.device_m_model.currentText(),
             device_e_model=self.device_e_model.currentText(),
-            device_tunnel=self.device_tunnel.currentText(),
+            device_m_tunnel=self.device_m_tunnel.currentText(),
             fstart=self.sp_fstart.value(),
             fstop=self.sp_fstop.value(),
             fspan=self.sp_fspan.value(),
@@ -350,7 +382,7 @@ class ControlWidget(QWidget):
             device_type=self.device_type.currentText(),
             device_m_model=self.device_m_model.currentText(),
             device_e_model=self.device_e_model.currentText(),
-            device_tunnel=self.device_tunnel.currentText(),
+            device_m_tunnel=self.device_m_tunnel.currentText(),
             fstart=self.sp_fstart.value(),
             fstop=self.sp_fstop.value(),
             fspan=self.sp_fspan.value(),

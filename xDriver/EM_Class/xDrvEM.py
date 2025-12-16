@@ -185,62 +185,34 @@ class PyBode():
         self.sample_method=samplemethod
         self.average_times=averageTimes
         self.syncChannel=syncchannel
+        self.setOSCChannel(inputchannel,outputchannel,syncchannel,samplemethod,averageTimes)
         if(self.syncTriggerEnable == True):
-            self.m_instru.setChannelCouple(inputchannel,couple_type.ac)
-            self.m_instru.setChannelCouple(outputchannel,couple_type.ac)
-            self.m_instru.setChannelCouple(syncchannel,couple_type.ac)
-            self.m_instru.setChannelOffet(inputchannel,0)
-            self.m_instru.setChannelOffet(outputchannel,0)
-            self.m_instru.setChannelOffet(syncchannel,0)
-            self.m_instru.setSampleMode(samplemode=samplemethod)
-            self.m_instru.setAverageTimes(averageTimes)
-            self.m_instru.setTriggerChannel(syncchannel)
-            self.m_instru.setTriggerLevel(0)
-
             self.e_instru.set_waveform_type(excitionchannel,waveform_type.sin)
             self.e_instru.set_waveform_type(synctrigger,waveform_type.square)
             self.e_instru.setChannelOutputState(synctrigger,1)
             self.e_instru.setChannelOutputState(excitionchannel,1)
-            return
         else:
-            self.m_instru.setChannelCouple(inputchannel,couple_type.ac)
-            self.m_instru.setChannelCouple(outputchannel,couple_type.ac)
-            self.m_instru.setChannelOffet(inputchannel,0)
-            self.m_instru.setChannelOffet(outputchannel,0)
-            self.m_instru.setSampleMode(samplemode=samplemethod)
-
-            self.m_instru.setTriggerChannel(inputchannel)
-            self.m_instru.setTriggerLevel(0)
-
             self.e_instru.set_waveform_type(excitionchannel,waveform_type.sin)
             self.e_instru.setChannelOutputState(excitionchannel,1)
-            return
+        return
+    
     def setOSCChannel(self,inputchannel,outputchannel,\
-                   syncchannel,samplemethod,averageTimes,freq):
-        if(self.syncTriggerEnable == True):
-            self.m_instru.setChannelCouple(inputchannel,couple_type.ac)
-            self.m_instru.setChannelCouple(outputchannel,couple_type.ac)
-            self.m_instru.setChannelCouple(syncchannel,couple_type.ac)
-            self.m_instru.setChannelOffet(inputchannel,0)
-            self.m_instru.setChannelOffet(outputchannel,0)
-            self.m_instru.setChannelOffet(syncchannel,0)
-            self.m_instru.setSampleMode(samplemode=samplemethod)
+                   syncchannel,samplemethod,averageTimes):
+        chans = [inputchannel, outputchannel]
+        if self.syncTriggerEnable:
+            chans.append(syncchannel)
+        for ch in chans:
+            self.m_instru.setChannelCouple(ch, couple_type.ac)
+            self.m_instru.setChannelOffet(ch, 0)
+        self.m_instru.setSampleMode(samplemode=samplemethod)
+        if self.syncTriggerEnable:
             self.m_instru.setAverageTimes(averageTimes)
-            self.m_instru.setTriggerChannel(syncchannel)
-            self.m_instru.setTriggerLevel(0)
-            self.m_instru.setTimebaseScale(0.25*1/freq)
-            return
+            trig = syncchannel
         else:
-            self.m_instru.setChannelCouple(inputchannel,couple_type.ac)
-            self.m_instru.setChannelCouple(outputchannel,couple_type.ac)
-            self.m_instru.setChannelOffet(inputchannel,0)
-            self.m_instru.setChannelOffet(outputchannel,0)
-            self.m_instru.setSampleMode(samplemode=samplemethod)
-
-            self.m_instru.setTriggerChannel(inputchannel)
-            self.m_instru.setTriggerLevel(0)
-            self.m_instru.setTimebaseScale(0.25*1/freq)
-            return
+            trig = inputchannel
+        self.m_instru.setTriggerChannel(trig)
+        self.m_instru.setTriggerLevel(0)
+        return
 
 # -------------------- 主流程 --------------------
 if __name__=="__main__":

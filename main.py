@@ -7,7 +7,7 @@ from multiprocessing import Process, Queue
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QAction, qApp,
                              QSplitter, QVBoxLayout, QWidget, QFileDialog)
 from PyQt5.QtCore import Qt,QTimer
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QIcon
 
 #===============Ribbon Bar===============#
 from numpy import trace
@@ -33,6 +33,7 @@ class BodeAnalyzer(QMainWindow):
         self.checkLifeTime = QTimer()
         self.checkLifeTime.timeout.connect(self.check_lifetime)
         self.setWindowTitle("xFRA - A Universal Frequency Response Analyzer ")
+        self.setWindowIcon(QIcon("./icon/xFRA.svg"))
         self.resize(1920, 1080)
         self._create_menu()
         self._create_central()
