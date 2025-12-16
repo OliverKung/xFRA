@@ -5,23 +5,23 @@ class waveform_unit(Enum):
     Vrms = "VRMS"
     dBm = "DBM"
 
-class channel_number(Enum):
-    channel1="channel1"
-    channel2="channel2"
-    channel3="channel3"
-    channel4="channel4"
+# class channel_number(Enum):
+#     channel1="channel1"
+#     channel2="channel2"
+#     channel3="channel3"
+#     channel4="channel4"
 
-class wave_parameter(Enum):
-    vmax = "vmax"
-    vmin = "vmin"
-    vpp = "vpp"
-    vrms = "vrms"
-    ac_rms = "ac_rms"
-    rise_rise_phase = "rise_rise_phase"
-    rise_fall_phase = "rise_fall_phase"
-    fall_rise_phase = "fall_rise_phase"
-    fall_fall_phase = "fall_fall_phase"
-    freq = "freq"
+# class wave_parameter(Enum):
+#     vmax = "vmax"
+#     vmin = "vmin"
+#     vpp = "vpp"
+#     vrms = "vrms"
+#     ac_rms = "ac_rms"
+#     rise_rise_phase = "rise_rise_phase"
+#     rise_fall_phase = "rise_fall_phase"
+#     fall_rise_phase = "fall_rise_phase"
+#     fall_fall_phase = "fall_fall_phase"
+#     freq = "freq"
 
 class memory_store_method(Enum):
     screen_only=0
@@ -58,11 +58,10 @@ class channel_number(Enum):
 
 class wave_parameter(Enum):
     Peak2Peak = "VPP"
-    peak2peak = "VPP"
-    rms = "VRMS"
     RMS = "VRMS"
     AVG = "VAVG"
-    avg = "VAVG"
+    FREQ = "FREQ"
+
 
 class signal_generator_channel_number(Enum):
     CH1="1"

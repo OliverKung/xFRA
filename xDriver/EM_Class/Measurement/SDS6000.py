@@ -8,7 +8,7 @@
 # tunnel visa socket serial
 # average yes
 # min-freq 0
-# max-freq 350000000
+# max-freq 2000000000
 # channel 4
 # channelAttn 0.0001 0.0002 0.0005 0.001 0.002 0.005 0.01 0.02 0.05 0.1 0.2 0.5 1 2 5 10 20 50 100 200 500 1000 2000 5000 10000 20000 50000
 # channelCoupling DC AC GND
@@ -28,6 +28,36 @@ from enum import Enum
 sys.path.append('./xDriver/EM_Class/')
 from typedef import *
 
+def typedef_translate(to_be_translage):
+    if(type(to_be_translage) == wave_parameter):
+        if to_be_translage == wave_parameter.Peak2Peak:
+            return "PKPK"
+        elif to_be_translage == wave_parameter.RMS:
+            return "RMS"
+        elif to_be_translage == wave_parameter.AVG:
+            return "MEAN"
+        elif to_be_translage == wave_parameter.FREQ:
+            return "FREQ"
+    elif(type(to_be_translage) == channel_number):
+        if to_be_translage == channel_number.ch1:
+            return "C1"
+        elif to_be_translage == channel_number.ch2:
+            return "C2"
+        elif to_be_translage == channel_number.ch3:
+            return "C3"
+        elif to_be_translage == channel_number.ch4:
+            return "C4"
+    elif(type(to_be_translage) == sample_method):
+        if to_be_translage == sample_method.normal:
+            return "NORM"
+        elif to_be_translage == sample_method.average:
+            return "AVER"
+        elif to_be_translage == sample_method.peak_detect:
+            return "PEAK"
+        elif to_be_translage == sample_method.high_resolution:
+            return "ERES"
+    pass
+
 def voltageScaleLimiter(voltagescale,channel_atte,freq):
     if(voltagescale>10):
         return 10*channel_atte
@@ -37,6 +67,12 @@ def voltageScaleLimiter(voltagescale,channel_atte,freq):
         return 2e-3*channel_atte
     return voltagescale
 
+class measure_item():
+    def __init__(self,channel:channel_number,channelB:channel_number=None,items:wave_parameter=None,measure_idx=0):
+        self.channel=channel
+        self.items=items
+        self.channelB=channelB
+
 class SDS6000:
     def __init__(self,tunnel = "socket", address = ""):
         self.tunnel = tunnel.lower()
@@ -44,6 +80,8 @@ class SDS6000:
         self.instr = None
         self.synctriggerEnable = False
         self.average_times = 1
+        # list of measure_item，类型为 measure_item
+        self.measure_items = []
         self._setup_port()
     
     # -------------------- xDrvEM 标准接口 --------------------
@@ -103,30 +141,71 @@ class SDS6000:
 
     # 读取频率
     def freq(self,channel:channel_number):
-        cmd = ":MEAS:ITEM? FREQ,"+channel.value
-        return float(self.instr.query(cmd))
+        index = 1
+        for item in self.measure_items:
+            if item.channel == channel and item.items == wave_parameter.FREQ:
+                cmd = ":MEAS:ADV:P"+str(index)+":VAL?"
+                return float(self.instr.query(cmd))
+            index = index + 1
+        # If not found, create a new measurement
+        measure_idx = len(self.measure_items)+1
+        self.instr.write(":MEAS:ADV:P"+str(measure_idx)+" ON")
+        self.instr.write(":MEAS:ADV:P"+str(measure_idx)+":TYPE "+typedef_translate(wave_parameter.FREQ))
+        self.instr.write(":MEAS:ADV:P"+str(measure_idx)+":SOUR1 "+typedef_translate(channel))
+        self.measure_items.append(measure_item(channel=channel, items=wave_parameter.FREQ, measure_idx=measure_idx))
+        time.sleep(0.1)
+        cmd = ":MEAS:ADV:P"+str(measure_idx)+":VAL?"
+        while True:
+            try:
+                float_value = float(self.instr.query(cmd))
+                break
+            except ValueError:
+                time.sleep(0.1)
+        return float_value
 
     # 读取相位差，范围-180~180度
     def phase(self,channelA:channel_number,channelB:channel_number):
-        max_try_times = 5
-        phase=-1*self.getphase(channelA,channelB)
-        while(phase>360 or phase <-360):
-            phase=-1*self.getphase(channelA,channelB)
-        loopCounter = 0
-        while(phase > 180 or phase<-180 and loopCounter<max_try_times):
-            phase=-1*self.getphase(channelA,channelB)
-            loopCounter = loopCounter + 1
-        if(loopCounter >= max_try_times):
-            phase = 0
-        return phase
+        index = 1
+        for item in self.measure_items:
+            if item.channel ==  channelA and item.channelB == channelB:
+                cmd = ":MEAS:ADV:P"+str(index)+":VAL?"
+                return float(self.instr.query(cmd))
+            index = index + 1
+        # If not found, create a new measurement
+        measure_idx = len(self.measure_items)+1
+        self.instr.write(":MEAS:ADV:P"+str(measure_idx)+" ON")
+        self.instr.write(":MEAS:ADV:P"+str(measure_idx)+":TYPE PHA")
+        self.instr.write(":MEAS:ADV:P"+str(measure_idx)+":SOUR1 "+typedef_translate(channelA))
+        self.instr.write(":MEAS:ADV:P"+str(measure_idx)+":SOUR2 "+typedef_translate(channelB))
+        self.measure_items.append(measure_item(channel=channelA, channelB=channelB, items=wave_parameter.FREQ, measure_idx=measure_idx))
+        time.sleep(0.1)
+        cmd = ":MEAS:ADV:P"+str(measure_idx)+":VAL?"
+        while True:
+            try:
+                float_value = float(self.instr.query(cmd))
+                break
+            except ValueError:
+                time.sleep(0.1)
+        return float_value
 
     # 设置采样模式
     def setSampleMode(self,samplemode:sample_method):
-        self.setAcquire(samplemode=samplemode)
+        if samplemode != sample_method.average:
+            self.instr.write(":ACQ:TYPE "+typedef_translate(samplemode))
+        else:
+            pass
 
     # 设置耦合方式
     def setChannelCouple(self,channel:channel_number,couple:couple_type):
         self.instr.write(":"+channel.value+":COUP "+couple.value)
+
+    # 设置通道偏移
+    def setChannelOffet(self,channel:channel_number,offset):
+        self.instr.write(":"+channel.value+":OFFS "+str(offset))
+
+    # 设置通道衰减
+    def setChannelAtte(self,channel:channel_number,atte):
+        self.instr.write(":"+channel.value+":PROB VAL,"+atte)
 
     # 设置触发通道
     def setTriggerChannel(self,channel:channel_number):
@@ -134,16 +213,12 @@ class SDS6000:
 
     # 设置平均次数
     def setAverageTimes(self,averagetimes):
-        self.instr.write(":ACQ:AVER "+str(2**averagetimes))
+        self.instr.write(":ACQ:TYPE AVER,"+str(2**averagetimes))
         self.average_times=averagetimes 
-
-    # 设置通道衰减
-    def setChannelAtte(self,channel:channel_number,atte):
-        self.instr.write(":"+channel.value+":PROB "+atte)
     
-    # 设置带宽单位
+    # 设置通道单位
     def setChannelUnit(self,channel:channel_number,unit:str):
-        self.instr.write(":"+channel.value+":UNIT "+unit)\
+        self.instr.write(":"+channel.value+":UNIT "+unit)
     
     # 设置同步触发
     def setSynctrigger(self,enable:bool):
@@ -157,14 +232,29 @@ class SDS6000:
 
     # end----------------- 回读类接口 --------------------
     # end----------------- xDrvEM 标准接口 --------------------
-
-    def dutyCycle(self,channel:channel_number):
-        cmd = ":MEAS:ITEM? PDUT"+","+channel.value
-        return float(self.instr.query(cmd))
     
     def getvoltage(self,channel:channel_number,items:wave_parameter):
-        cmd = ":MEAS:ITEM? "+items.value+","+channel.value
-        return float(self.instr.query(cmd))
+        index = 1
+        for item in self.measure_items:
+            if item.channel == channel and item.items == items:
+                cmd = ":MEAS:ADV:P"+str(index)+":VAL?"
+                return float(self.instr.query(cmd))
+            index = index + 1
+        # If not found, create a new measurement
+        measure_idx = len(self.measure_items)+1
+        self.instr.write(":MEAS:ADV:P"+str(measure_idx)+" ON")
+        self.instr.write(":MEAS:ADV:P"+str(measure_idx)+":TYPE "+typedef_translate(items))
+        self.instr.write(":MEAS:ADV:P"+str(measure_idx)+":SOUR1 "+typedef_translate(channel))
+        self.measure_items.append(measure_item(channel=channel, items=items, measure_idx=measure_idx))
+        time.sleep(0.1)
+        cmd = ":MEAS:ADV:P"+str(measure_idx)+":VAL?"
+        while True:
+            try:
+                float_value = float(self.instr.query(cmd))
+                break
+            except ValueError:
+                time.sleep(0.1)
+        return float_value
 
     def getSampleDelay(self,freq):
         if(self.synctriggerEnable == False):
@@ -173,63 +263,9 @@ class SDS6000:
             sample_delay=1 if 0.1>6*4*1/freq*2**self.average_times else 6*4*1/freq*2**self.average_times
         return sample_delay
 
-    def getphase(self,channelA:channel_number,channelB:channel_number):
-        cmd = ":MEAS:ITEM? RRPH,"+channelA.value+","+channelB.value
-        return float(self.instr.query(cmd))
-    
-    def saveChanneltoFile(self,\
-        file_name:str,channel:channel_number,\
-        data_mode:memory_store_method=memory_store_method.screen_only,\
-        memory_length:int=1000):
-        with open(file_name,"w") as f:
-            print("Store "+str(channel)+" "+str(memory_length)+" points data to "+file_name)
-            if(data_mode==memory_store_method.screen_only):
-                self.instr.write(":WAV:MODE NORM")
-                self.instr.write(":WAV:POIN "+str(memory_length))
-                self.instr.write(":WAV:FORMAT ASCII")
-                data_line=self.instr.query(":WAV:DATA?")
-                data_point=data_line.split(",")
-                f.write("Voltage\r\n")
-                data_point[0]=data_point[0][11:]
-                for data in data_point:
-                    f.write(data+"\r\n")
-            if(data_mode==memory_store_method.RAW_data):
-                self.instr.write(":WAV:MODE RAW")
-                self.instr.write(":WAV:POIN "+str(memory_length))
-                self.instr.write(":WAV:FORMAT ASCII")
-                self.instr.write(":STOP")
-                print("start time:")
-                print(time.time())
-                data_line=self.instr.query(":WAV:DATA?")
-                print(time.time())
-                print(data_line)
-                data_point=data_line.split(",")
-                f.write("Voltage\r\n")
-                data_point[0]=data_point[0][11:]# remove head meaning less bytes
-                for data in data_point:
-                    f.write(data+"\r\n")
-                self.instr.write(":RUN")
-            print(channel.value+" Data of "+self.model+" locates at "+self.addr+" saved to "+file_name)
-
-    def setAcquire(self,memdepth:memory_store_depth=memory_store_depth.depth_AUTO,\
-        samplemode:sample_method=sample_method.normal):
-        self.instr.write(":ACQ:TYPE "+samplemode.value)
-        self.instr.write(":ACQ:MDEP "+memdepth.value)
-        time.sleep(1)
-
-    def getScreenshoot(self,file_name:str):
-        with open(file_name,"wb") as image:
-            self.instr.write(":DISPlay:DATA?")
-            img=self.instr.read_raw()
-            image.write(img[11:])# remove head 11 meaning less bytes
-            image.close()
-
     def setTimebaseScale(self,timebase_scale):
         self.instr.write(":TIM:SCAL "+str(timebase_scale))
     
-    def setChannelOffet(self,channel:channel_number,offset):
-        self.instr.write(":"+channel.value+":OFFS "+str(offset))
-
     def getChannelScale(self,channel:channel_number):
         return float(self.instr.query(":"+channel.value+":SCAL?"))
     
@@ -294,6 +330,7 @@ class SDS6000:
         print("SDS6000 IDN:", idn)
         self.instr.write("SYST:BEEP ON")
         self.instr.write("SYST:BEEP OFF")
+        self.instr.write(":MEAS:ADV:CLE")  # 清除所有测量设置
     
 
 if __name__ == "__main__":
@@ -303,4 +340,12 @@ if __name__ == "__main__":
     # mso.autoscale()
     mso.instr.write(":MEAS:SIMP:ITEM PKPK,ON")
     mso.instr.write(":MEAS:SIMP:SOUR C1")
-    print("CH1 Voltage Vpp:", mso.instr.query(":MEAS:SIMP:VAL? PKPK"))
+    print("CH1 Voltage Vpp:", mso.getvoltage(channel_number.ch1, wave_parameter.Peak2Peak))
+    print("CH2 Voltage VRMS:", mso.getvoltage(channel_number.ch2, wave_parameter.AVG))
+    print("CH1 Frequency:", mso.freq(channel_number.ch1))
+    print("CH1-CH2 Phase:", mso.phase(channel_number.ch1, channel_number.ch2))
+    # for i in range(1000):
+    #     print("CH1 Voltage Vpp:", mso.getvoltage(channel_number.ch1, wave_parameter.Peak2Peak))
+    #     print("CH2 Voltage VRMS:", mso.getvoltage(channel_number.ch2, wave_parameter.AVG))
+    #     print("CH1 Frequency:", mso.freq(channel_number.ch1))
+    #     time.sleep(0.1)
