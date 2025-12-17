@@ -68,6 +68,14 @@ class QLabelComboBox(QWidget):
     # 获取指定索引的选项文本
     def itemText(self, index: int):
         return self.combo.itemText(index)
+    
+    # 添加单个选项
+    def addItem(self, item: str):
+        self.combo.addItem(item)
+    
+    # 清除所有选项
+    def clear(self):
+        self.combo.clear()
 
 # 示例用法
 if __name__ == "__main__":

@@ -5,7 +5,7 @@ import sys
 from multiprocessing import Process, Queue
 #===============PyQt5===============#
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QAction, qApp,
-                             QSplitter, QVBoxLayout, QWidget, QFileDialog)
+                             QSplitter, QVBoxLayout, QWidget, QFileDialog, QSystemTrayIcon)
 from PyQt5.QtCore import Qt,QTimer
 from PyQt5.QtGui import QFont, QIcon
 
@@ -22,6 +22,9 @@ from custom_ribbon_bar import customRibbonBar
 #===============加载xConv================#
 from xConv.xConv import xConvS2PReader, xConvFormulaTransformer
 
+#=============== 主窗口 ===============#
+import ctypes
+
 class BodeAnalyzer(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -33,7 +36,6 @@ class BodeAnalyzer(QMainWindow):
         self.checkLifeTime = QTimer()
         self.checkLifeTime.timeout.connect(self.check_lifetime)
         self.setWindowTitle("xFRA - A Universal Frequency Response Analyzer ")
-        self.setWindowIcon(QIcon("./icon/xFRA.svg"))
         self.resize(1920, 1080)
         self._create_menu()
         self._create_central()
@@ -220,9 +222,17 @@ class BodeAnalyzer(QMainWindow):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
+    # 设置托盘图标
+    # app.setWindowIcon(QIcon("./icon/xFRA.png"))
+    # tray_Icon = QSystemTrayIcon(QIcon("./icon/xFRA.png"), parent=app)
+    # tray_Icon.show()
+    # 设置任务栏图标
     font = QFont("Arial",10)
     app.setStyle("Fusion")
     app.setFont(font)
     w = BodeAnalyzer()
+    w.setWindowIcon(QIcon("./icon/xFRA.png"))
+    if(sys.platform == "win32"):
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(u'myappid')
     w.show()
     sys.exit(app.exec_())

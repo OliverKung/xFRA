@@ -1,8 +1,29 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton,QLabel, QDialog
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton,QLabel, QDialog, QFrame
 from PyQt5.QtCore import pyqtSignal
 from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtGui import QPainter, QPen, QColor
+from PyQt5.QtCore import Qt
 from basic_custom_widget.QLabelComboBox import QLabelComboBox
 from basic_custom_widget.QEngLineEdit import QEngLineEdit
+
+
+class FramedWidget(QWidget):
+    """自定义控件：在本身尺寸内绘制蓝色边框，内部再嵌一个垂直布局放按钮"""
+    def __init__(self, parent=None,color = "#1E90FF"):
+        super().__init__(parent)
+        # self.setFixedSize(160, 180)          # 根据需要调整大小
+        self.setAttribute(Qt.WA_StyledBackground, True)
+        self.color = color
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        pen = QPen(QColor(self.color), 4)   # 4 像素宽的蓝色边框
+        #虚线边框
+        # pen.setStyle(Qt.DotLine)
+        painter.setPen(pen)
+        # 在控件矩形内画边框
+        painter.drawRect(self.rect())
 
 class channelSet(QWidget):
     def __init__(self):
@@ -10,20 +31,25 @@ class channelSet(QWidget):
         self._build_ui()
 
     def _build_ui(self):
+        self.setWindowTitle("xFRA E-M Class Channel Set")
+        self.setWindowIcon(QtGui.QIcon("./icon/xFRA_ProbeSet.png"))
         self.setObjectName("Dialog")
-        self.resize(640, 480)
+        self.setFixedSize(720, 480)
         font = QtGui.QFont()
-        font.setPointSize(12)
+        font.setPointSize(10)
         font.setFamily("Arial")
         font.setWeight(75)
         self.setFont(font)
         self.verticalLayout = QtWidgets.QVBoxLayout(self)
-        self.label = QLabel("Channel Set Dialog", self)
+        self.label = QLabel("Channel Set", self)
+        self.label.setFont(QtGui.QFont("Arial", 20, QtGui.QFont.Bold))
         self.label.setAlignment(QtCore.Qt.AlignCenter)
         self.verticalLayout.addWidget(self.label)
 
-        self.MeasSetGridLayout = QtWidgets.QGridLayout()
-        self.verticalLayout.addLayout(self.MeasSetGridLayout)
+        self.MeasSetGridWidget = FramedWidget(self,color="#1E90FF")
+        self.MeasSetGridLayout = QtWidgets.QGridLayout(self.MeasSetGridWidget)
+        self.MeasSetGridWidget.setLayout(self.MeasSetGridLayout)
+        self.verticalLayout.addWidget(self.MeasSetGridWidget)
         self.Meas1ChannelSelect = QLabelComboBox(label_text="Meas1 Channel",combo_items=["CH1", "CH2", "CH3", "CH4"])
         self.MeasSetGridLayout.addWidget(self.Meas1ChannelSelect, 0, 0)
         self.Meas1Couple = QLabelComboBox(label_text="Couple",combo_items=["DC","AC","GND"])
@@ -42,21 +68,48 @@ class channelSet(QWidget):
         self.MeasSetGridLayout.addWidget(self.SyncMeasCouple, 2, 1)
         self.SyncMeasInputImp = QLabelComboBox(label_text="Imp",combo_items=["1 MΩ", "50 Ω"])
         self.MeasSetGridLayout.addWidget(self.SyncMeasInputImp, 2, 2)
-        self.buttonBox = QtWidgets.QDialogButtonBox(self)
-
-        self.ExctSetGridLayout = QtWidgets.QGridLayout()
-        self.verticalLayout.addLayout(self.ExctSetGridLayout)
-        self.ExcitationChannelSelect = QLabelComboBox(label_text="Excit Channel",combo_items=["CH1", "CH2", "CH3", "CH4"])
-        self.ExctSetGridLayout.addWidget(self.ExcitationChannelSelect, 0, 0)
-        self.ExcitationCouple = QLabelComboBox(label_text="Couple",combo_items=["DC","AC","GND"])
-        self.ExctSetGridLayout.addWidget(self.ExcitationCouple, 0, 1)
+        self.Meas1BandwidthLimit = QLabelComboBox(label_text="BW",combo_items=["Full"])
+        self.MeasSetGridLayout.addWidget(self.Meas1BandwidthLimit, 0, 3)
+        self.Meas2BandwidthLimit = QLabelComboBox(label_text="BW",combo_items=["Full"])
+        self.MeasSetGridLayout.addWidget(self.Meas2BandwidthLimit, 1, 3)
+        self.SyncMeasBandwidthLimit = QLabelComboBox(label_text="BW",combo_items=["Full"])
+        self.MeasSetGridLayout.addWidget(self.SyncMeasBandwidthLimit, 2, 3)
+       
+        self.ExctSetGridWidget = FramedWidget(self,color="#EB0909")
+        self.ExctSetVercticalLayout = QtWidgets.QVBoxLayout()
+        self.ExctSetGridWidget.setLayout(self.ExctSetVercticalLayout)
+        self.verticalLayout.addWidget(self.ExctSetGridWidget)
+        self.ExctHBoxLayout = QtWidgets.QHBoxLayout()
+        self.ExctSetVercticalLayout.addLayout(self.ExctHBoxLayout)
+        self.ExcitationChannelSelect = QLabelComboBox(label_text="Excit Channel",combo_items=["CH1", "CH2"])
+        self.ExctHBoxLayout.addWidget(self.ExcitationChannelSelect)
         self.ExcitationInputImp = QLabelComboBox(label_text="Imp",combo_items=["HiZ", "50 Ω"])
-        self.ExctSetGridLayout.addWidget(self.ExcitationInputImp, 0, 2)
+        self.ExctHBoxLayout.addWidget(self.ExcitationInputImp)
+        self.SyncHBoxLayout = QtWidgets.QHBoxLayout()
+        self.ExctSetVercticalLayout.addLayout(self.SyncHBoxLayout)
+        self.SyncExctChannelSelect = QLabelComboBox(label_text="Sync Channel",combo_items=["CH1", "CH2"])
+        self.SyncHBoxLayout.addWidget(self.SyncExctChannelSelect)
+        self.SyncExctInputImp = QLabelComboBox(label_text="Imp",combo_items=["HiZ", "50 Ω"])
+        self.SyncHBoxLayout.addWidget(self.SyncExctInputImp)
+        self.syncTriggerCheckBox = QtWidgets.QCheckBox("SyncT on Excit", self)
+        self.ExctSetVercticalLayout.addWidget(self.syncTriggerCheckBox)
+
+        self.buttonBox = QtWidgets.QDialogButtonBox(self)
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
         self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
         self.verticalLayout.addWidget(self.buttonBox)
-        # self.buttonBox.accepted.connect(self.accept)
-        # self.buttonBox.rejected.connect(self.reject)
+        self.verticalLayout.setStretch(0, 4)
+        self.verticalLayout.setStretch(1, 8)
+        self.verticalLayout.setStretch(2, 6)
+        self.verticalLayout.setStretch(3, 1)
+        self.buttonBox.accepted.connect(self.accept)
+        self.buttonBox.rejected.connect(self.reject)
+    def accept(self):
+        print("Settings accepted")
+        self.close()
+    def reject(self):
+        print("Settings canceled")
+        self.close()
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)

@@ -1,0 +1,55 @@
+Date : 2025-12-17 22:36:46
+Directory : h:\SoftDev\xFRA\xFRA
+Total : 19 files,  1585 codes, 328 comments, 180 blanks, all 2093 lines
+
+Languages
++----------+------------+------------+------------+------------+------------+
+| language | files      | code       | comment    | blank      | total      |
++----------+------------+------------+------------+------------+------------+
+| Python   |         15 |      1,385 |        327 |        172 |      1,884 |
+| XML      |          1 |        118 |          1 |          3 |        122 |
+| CSV      |          1 |         53 |          0 |          1 |         54 |
+| Markdown |          2 |         29 |          0 |          4 |         33 |
++----------+------------+------------+------------+------------+------------+
+
+Directories
++---------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                          | files      | code       | comment    | blank      | total      |
++---------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                             |         19 |      1,585 |        328 |        180 |      2,093 |
+| . (Files)                                                     |          5 |        285 |         13 |         18 |        316 |
+| basic_custom_widget                                           |          1 |          4 |          2 |          2 |          8 |
+| icon                                                          |          1 |        118 |          1 |          3 |        122 |
+| xDriver                                                       |         12 |      1,178 |        312 |        157 |      1,647 |
+| xDriver (Files)                                               |          1 |         23 |          0 |          4 |         27 |
+| xDriver\EM_Class                                              |         11 |      1,155 |        312 |        153 |      1,620 |
+| xDriver\EM_Class (Files)                                      |          2 |        -13 |         20 |          1 |          8 |
+| xDriver\EM_Class\Excitation                                   |          3 |          5 |         20 |        -15 |         10 |
+| xDriver\EM_Class\Measurement                                  |          6 |      1,163 |        272 |        167 |      1,602 |
++---------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++---------------------------------------------------------------+----------+------------+------------+------------+------------+
+| filename                                                      | language | code       | comment    | blank      | total      |
++---------------------------------------------------------------+----------+------------+------------+------------+------------+
+| h:\SoftDev\xFRA\xFRA\README.md                                | Markdown |          6 |          0 |          0 |          6 |
+| h:\SoftDev\xFRA\xFRA\basic_custom_widget\QLabelComboBox.py    | Python   |          4 |          2 |          2 |          8 |
+| h:\SoftDev\xFRA\xFRA\channelSet.py                            | Python   |        105 |          5 |          8 |        118 |
+| h:\SoftDev\xFRA\xFRA\control_widget.py                        | Python   |        117 |          2 |          8 |        127 |
+| h:\SoftDev\xFRA\xFRA\icon\xFRA.svg                            | XML      |        118 |          1 |          3 |        122 |
+| h:\SoftDev\xFRA\xFRA\main.py                                  | Python   |          4 |          6 |          1 |         11 |
+| h:\SoftDev\xFRA\xFRA\xDriver\EM_Class\Excitation\MSO5000.py   | Python   |        -83 |         -1 |        -23 |       -107 |
+| h:\SoftDev\xFRA\xFRA\xDriver\EM_Class\Excitation\SDG2000X.py  | Python   |         96 |         22 |         10 |        128 |
+| h:\SoftDev\xFRA\xFRA\xDriver\EM_Class\Excitation\Templage.py  | Python   |         -8 |         -1 |         -2 |        -11 |
+| h:\SoftDev\xFRA\xFRA\xDriver\EM_Class\Measurement\DHO800.py   | Python   |        219 |         50 |         35 |        304 |
+| h:\SoftDev\xFRA\xFRA\xDriver\EM_Class\Measurement\DHO900.py   | Python   |        216 |         50 |         35 |        301 |
+| h:\SoftDev\xFRA\xFRA\xDriver\EM_Class\Measurement\MSO5000.py  | Python   |        216 |         50 |         35 |        301 |
+| h:\SoftDev\xFRA\xFRA\xDriver\EM_Class\Measurement\SDS6000.py  | Python   |        259 |         61 |         31 |        351 |
+| h:\SoftDev\xFRA\xFRA\xDriver\EM_Class\Measurement\SDS6000X.py | Python   |         -3 |          0 |          0 |         -3 |
+| h:\SoftDev\xFRA\xFRA\xDriver\EM_Class\Measurement\SDS800HD.py | Python   |        256 |         61 |         31 |        348 |
+| h:\SoftDev\xFRA\xFRA\xDriver\EM_Class\typedef.py              | Python   |         50 |         16 |         12 |         78 |
+| h:\SoftDev\xFRA\xFRA\xDriver\EM_Class\xDrvEM.py               | Python   |        -63 |          4 |        -11 |        -70 |
+| h:\SoftDev\xFRA\xFRA\xDriver\xDriverStd.md                    | Markdown |         23 |          0 |          4 |         27 |
+| h:\SoftDev\xFRA\xFRA\xxx.csv                                  | CSV      |         53 |          0 |          1 |         54 |
+| Total                                                         |          |      1,585 |        328 |        180 |      2,093 |
++---------------------------------------------------------------+----------+------------+------------+------------+------------+

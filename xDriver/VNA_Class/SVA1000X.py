@@ -4,7 +4,7 @@
 # xDrvSetting begin
 # device-type VNA
 # model SVA1000X
-# tunnel VISA socket
+# tunnel visa
 # average yes
 # min-freq 1000000
 # max-freq 1500000000

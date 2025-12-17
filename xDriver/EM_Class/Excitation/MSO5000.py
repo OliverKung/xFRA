@@ -8,9 +8,8 @@
 # min-freq 0
 # max-freq 25000000
 # channel 2
-# max-amp 5
-# min-amp 0.001
-# amp-unit VPP
+# source-level 0.001 5
+# level-unit Vpp
 # square yes
 # square-max-freq 15000000
 # xDrvSetting end

@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import (QWidget, QGridLayout, QLabel, QSpinBox,
                              QDoubleSpinBox, QComboBox, QPushButton,
                              QGroupBox, QHBoxLayout, QVBoxLayout,
-                             QCheckBox, QFrame, QSplitter,QLineEdit)
+                             QCheckBox, QFrame, QSplitter,QLineEdit,QScrollArea)
 from PyQt5.QtCore import pyqtSignal, Qt
 import math
 
@@ -10,17 +10,10 @@ from basic_custom_widget.QSwitchButton import QSwitchButton
 from basic_custom_widget.QLabelComboBox import QLabelComboBox
 from basic_custom_widget.QLabelLineEdit import QLabelLineEdit
 
+from channelSet import channelSet
+
 from pathlib import Path
 import chardet
-
-class channelSet(QWidget):
-    def __init__(self):
-        super().__init__()
-        self._build_ui()
-
-    def _build_ui(self):
-        layout = QVBoxLayout(self)
-        self.setLayout(layout)
 
 class ControlWidget(QWidget):
     # 任何参数改动都发这个信号，dict 携带最新值
@@ -33,12 +26,22 @@ class ControlWidget(QWidget):
         self.EM_M_path = Path('./xDriver/EM_Class/Measurement/')
         self._build_ui()
         self._connect_signals()
+        self.channel_set_window = channelSet()
 
     # ---------- 构建 ----------
     def _build_ui(self):
-        self.setMinimumWidth(320)
+        self.setMinimumWidth(400)
         self.setMaximumWidth(500)
-        layout = QVBoxLayout(self)
+        # 给layout添加滚动条
+        vlayout = QVBoxLayout(self)
+        scrollArea = QScrollArea(self)
+        scrollArea.setWidgetResizable(True)
+        vlayout.addWidget(scrollArea)
+        
+        layout = QVBoxLayout()
+        widget = QWidget()
+        widget.setLayout(layout)
+        scrollArea.setWidget(widget)
 
         # 0.设备设置
         devgrp = QGroupBox("Device Settings")
@@ -48,7 +51,7 @@ class ControlWidget(QWidget):
         self.device_m_model = QLabelComboBox("M-Model")
         self.device_m_model.setComboItems(["SVA1000X","SSA3000X"])
         self.device_e_model = QLabelComboBox("E-Model")
-        self.device_e_model.setComboItems(["EM1000","EM2000"])
+        self.device_e_model.setComboItems(["SDG2000X"])
         self.device_m_address = QLabelLineEdit("M-Address")
         self.device_e_address = QLabelLineEdit("E-Address")
         self.device_m_tunnel = QLabelComboBox("M-Tunnel")
@@ -152,8 +155,8 @@ class ControlWidget(QWidget):
         layout.addWidget(levelgpb)
 
         # 3. 衰减器
-        srcgrp = QGroupBox("Attenuator")
-        g = QVBoxLayout(srcgrp)
+        self.attgrp = QGroupBox("Attenuator")
+        g = QVBoxLayout(self.attgrp)
 
 
         self.receive1_att = QLabelComboBox("Recv 1")
@@ -166,7 +169,7 @@ class ControlWidget(QWidget):
         g.addWidget(self.receive2_att)
         g.addWidget(self.channelSetBtn)
 
-        layout.addWidget(srcgrp)
+        layout.addWidget(self.attgrp)
         
         # 4.平均测量
         avggrp = QGroupBox("Averaging")
@@ -180,11 +183,21 @@ class ControlWidget(QWidget):
 
         # 5. RBW
         curgrp = QGroupBox("Receiver Bandwidth")
-        h = QHBoxLayout(curgrp)
+        v = QVBoxLayout(curgrp)
         self.cb_bw = QLabelComboBox("IF-BW")
         self.cb_bw.setComboItems(["1 Hz", "3 Hz", "5 Hz", "10 Hz", "30 Hz", "50 Hz","100 Hz", "300 Hz", "500 Hz", "1 kHz", "3 kHz", "5 kHz"])
         self.cb_bw.setCurrentText("300 Hz")
-        h.addWidget(self.cb_bw)
+        self.cb_samplemethod = QLabelComboBox("Sample Method")
+        self.cb_samplemethod.setComboItems(["Normal","Peak","Average"])
+        h = QHBoxLayout()
+        self.le_average_times = QEngLineEdit(alignment=Qt.AlignRight)
+        self.le_average_times.setValue(10)
+        self.averagetimeLabel = QLabel("Average Times")
+        h.addWidget(self.averagetimeLabel)
+        h.addWidget(self.le_average_times)
+        v.addWidget(self.cb_bw)
+        v.addWidget(self.cb_samplemethod)
+        v.addLayout(h)
         layout.addWidget(curgrp)
 
         layout.addStretch()
@@ -214,6 +227,16 @@ class ControlWidget(QWidget):
         # 频率计算迭代控件
         for w in [self.sp_fstart, self.sp_fstop, self.sp_fspan,self.sp_fcenter]:
             w.valueChanged.connect(self._source_level_update)
+        self.cb_samplemethod.currentTextChanged.connect(self._update_samplemethod)
+
+    def _update_samplemethod(self):
+        method=self.cb_samplemethod.currentText()
+        if method.lower()=="aver":
+            self.le_average_times.setEnabled(True)
+            self.averagetimeLabel.setEnabled(True)
+        else:
+            self.le_average_times.setEnabled(False)
+            self.averagetimeLabel.setEnabled(False)
 
     def _source_level_update(self):
         for w in [self.sp_fstart, self.sp_fstop, self.sp_fspan,self.sp_fcenter]:
@@ -244,24 +267,29 @@ class ControlWidget(QWidget):
         if dtype=="VNA":
             files = [f.stem for f in self.VNA_path.glob('*.py') if f.is_file() and f.stem != '__init__']
             self.device_m_model.setComboItems(files)
-            self.device_e_model.setEnabled(False)
-            self.device_e_address.setEnabled(False)
-            self.device_e_address.setVisible(False)
-            self.device_e_model.setVisible(False)
-            self.device_e_tunnel.setVisible(False)
+            self.setVisibleDeviceE(False)
         elif dtype=="E-M":
             files_M = [f.stem for f in self.EM_M_path.glob('*.py') if f.is_file() and f.stem != '__init__']
             files_E = [f.stem for f in self.EM_E_path.glob('*.py') if f.is_file() and f.stem != '__init__']
-            self.device_e_address.setEnabled(True)
-            self.device_e_model.setEnabled(True)
-            self.device_e_address.setVisible(True)
-            self.device_e_model.setVisible(True)
-            self.device_e_tunnel.setVisible(True)
+            self.setVisibleDeviceE(True)
             self.device_m_model.setComboItems(files_M)
             self.device_e_model.setComboItems(files_E)
         if model in [self.device_m_model.itemText(i) for i in range(self.device_m_model.count())]:
             self.device_m_model.setCurrentText(model)
         self._notify()
+
+    def setVisibleDeviceE(self,visible:bool):
+        self.device_e_model.setEnabled(visible)
+        self.device_e_address.setEnabled(visible)
+        self.device_e_address.setVisible(visible)
+        self.device_e_model.setVisible(visible)
+        self.device_e_tunnel.setVisible(visible)
+        self.le_average_times.setVisible(visible)
+        self.cb_samplemethod.setVisible(visible)
+        self.attgrp.setVisible(visible)
+        self.averagetimeLabel.setVisible(visible)
+        self.cb_bw.setVisible(not visible)
+
 
     def _update_model_setting(self):
         if self.device_type.currentText()=="VNA":
@@ -297,13 +325,13 @@ class ControlWidget(QWidget):
                             self.average_spinbox.setEnabled(False)
                             self.average_spinbox.setValue(1)
                     elif command.startswith('min-freq'):
-                        min_freq = float(command.split(' ')[1])
-                        self.sp_fstart.setLimits(min_value=min_freq)
-                        self.sp_fstop.setLimits(min_value=min_freq)
+                        self.min_freq = float(command.split(' ')[1])
+                        self.sp_fstart.setLimits(min_value=self.min_freq)
+                        self.sp_fstop.setLimits(min_value=self.min_freq)
                     elif command.startswith('max-freq'):
-                        max_freq = float(command.split(' ')[1])
-                        self.sp_fstart.setLimits(max_value=max_freq)
-                        self.sp_fstop.setLimits(max_value=max_freq)
+                        self.max_freq = float(command.split(' ')[1])
+                        self.sp_fstart.setLimits(max_value=self.max_freq)
+                        self.sp_fstop.setLimits(max_value=self.max_freq)
                     elif command.startswith('sweep-type'):
                         sweep_types = command.split(' ')[1:]
                         if 'LIN' in sweep_types and 'LOG' in sweep_types:
@@ -345,33 +373,117 @@ class ControlWidget(QWidget):
                 for line in fileLines:
                     if line.startswith('#'):
                         settingLine.append(line)
+                xDrvSettingLine = False
+                for line in settingLine:
+                    if line.startswith('# xDrvSetting begin'):
+                        xDrvSettingLine = True
+                    elif line.startswith('# xDrvSetting end'):
+                        xDrvSettingLine = False
+                    if xDrvSettingLine and not line.startswith('# xDrvSetting'):
+                        command = line.strip().lstrip('#').strip()
+                        if command.startswith('model'):
+                            continue
+                        elif command.startswith('tunnel'):
+                            self.device_m_tunnel.setComboItems(command.split(' ')[1:])
+                        elif command.startswith('average'):
+                            if command.split(' ')[1].lower()=='yes':
+                                self.average_spinbox.setEnabled(True)
+                            else:
+                                self.average_spinbox.setEnabled(False)
+                                self.average_spinbox.setValue(1)
+                        elif command.startswith('min-freq'):
+                            self.min_freq = float(command.split(' ')[1])
+                            self.sp_fstart.setLimits(min_value=self.min_freq)
+                            self.sp_fstop.setLimits(min_value=self.min_freq)
+                        elif command.startswith('max-freq'):
+                            self.max_freq = float(command.split(' ')[1])
+                            self.sp_fstart.setLimits(max_value=self.max_freq)
+                            self.sp_fstop.setLimits(max_value=self.max_freq)
+                        elif command.startswith('channelNum'):
+                            self.channel_set_window.Meas1ChannelSelect.clear()
+                            self.channel_set_window.Meas2ChannelSelect.clear()
+                            self.channel_set_window.SyncMeasChannelSelect.clear()
+                            for i in range(int(command.split(' ')[1])):
+                                self.channel_set_window.Meas1ChannelSelect.addItem(f"CH{i+1}")
+                                self.channel_set_window.Meas2ChannelSelect.addItem(f"CH{i+1}")
+                                self.channel_set_window.SyncMeasChannelSelect.addItem(f"CH{i+1}")
+                        elif command.startswith('channelAttn'):
+                            self.receive1_att.setComboItems([item for item in command.split(' ')[1:]])
+                            self.receive2_att.setComboItems([item for item in command.split(' ')[1:]])
+                            if "1" in command.split(' ')[1:]:
+                                self.receive1_att.setCurrentText("1")
+                                self.receive2_att.setCurrentText("1")
+                        elif command.startswith('channelCoupling'):
+                            self.channel_set_window.Meas1Couple.setComboItems([item for item in command.split(' ')[1:]])
+                            self.channel_set_window.Meas2Couple.setComboItems([item for item in command.split(' ')[1:]])
+                            self.channel_set_window.SyncMeasCouple.setComboItems([item for item in command.split(' ')[1:]])
+                        elif command.startswith('channelBandwidth'):
+                            self.channel_set_window.Meas1BandwidthLimit.clear()
+                            self.channel_set_window.Meas2BandwidthLimit.clear()
+                            self.channel_set_window.SyncMeasBandwidthLimit.clear()
+                            for item in command.split(' ')[1:]:
+                                if item != "Full":
+                                    if int(item)<1000:
+                                        item_converted = item+" Hz"
+                                    elif int(item)>=1000 and int(item)<1000000:
+                                        item_converted = str(int(int(item)/1000))+" kHz"
+                                    elif int(item)>=1000000 and int(item)<1000000000:
+                                        item_converted = str(int(int(item)/1000000))+" MHz"
+                                    elif int(item)>=1000000000:
+                                        item_converted = str(int(int(item)/1000000000))+" GHz"
+                                else:
+                                    item_converted = "Full"
+                                self.channel_set_window.Meas1BandwidthLimit.addItem(item_converted)
+                                self.channel_set_window.Meas2BandwidthLimit.addItem(item_converted)
+                                self.channel_set_window.SyncMeasBandwidthLimit.addItem(item_converted)
+                        elif command.startswith('samplemode'):
+                            self.cb_samplemethod.setComboItems(command.split(' ')[1:])
+            with open(self.EM_E_path / (self.device_e_model.currentText()+'.py'), 'rb') as f:
+                raw_data = f.read()
+                detected = chardet.detect(raw_data)
+                encoding = detected['encoding']
+            with open(self.EM_E_path / (self.device_e_model.currentText()+'.py'), 'r',encoding=encoding) as f:
+                fileLines = f.readlines()
+                settingLine = []
+                for line in fileLines:
+                    if line.startswith('#'):
+                        settingLine.append(line)
+                xDrvSettingLine = False
+                for line in settingLine:
+                    if line.startswith('# xDrvSetting begin'):
+                        xDrvSettingLine = True
+                    elif line.startswith('# xDrvSetting end'):
+                        xDrvSettingLine = False
+                    if xDrvSettingLine and not line.startswith('# xDrvSetting'):
+                        command = line.strip().lstrip('#').strip()
+                        if command.startswith('model'):
+                            continue
+                        elif command.startswith('tunnel'):
+                            self.device_e_tunnel.setComboItems(command.split(' ')[1:])
+                        elif command.startswith('min-freq'):
+                            self.min_freq = float(command.split(' ')[1]) if self.min_freq<float(command.split(' ')[1]) else self.min_freq
+                            self.sp_fstart.setLimits(min_value=self.min_freq)
+                            self.sp_fstop.setLimits(min_value=self.min_freq)
+                        elif command.startswith('max-freq'):
+                            self.max_freq = float(command.split(' ')[1]) if self.max_freq>float(command.split(' ')[1]) else self.max_freq
+                            self.sp_fstart.setLimits(max_value=self.max_freq)
+                            self.sp_fstop.setLimits(max_value=self.max_freq)
+                        elif command.startswith('source-level'):
+                            levels = command.split(' ')[1:]
+                            if len(levels) == 2:
+                                self.source_level.setLimits(min_value=float(levels[0]), max_value=float(levels[1]))
+                        elif command.startswith('level-unit'):
+                            self.level_unit_cb.setComboItems(command.split(' ')[1:])
 
     def _channelSetBtn_clicked(self):
         print("Channel Set clicked")
+        # 弹出 channel set 窗口
+        if self.channel_set_window != None:
+            self.channel_set_window.show()
         self._notify()
 
     def _notify(self):
-        d = dict(
-            device_m_address=self.device_m_address.text(),
-            device_e_address=self.device_e_address.text(),
-            device_type=self.device_type.currentText(),
-            device_m_model=self.device_m_model.currentText(),
-            device_e_model=self.device_e_model.currentText(),
-            device_m_tunnel=self.device_m_tunnel.currentText(),
-            fstart=self.sp_fstart.value(),
-            fstop=self.sp_fstop.value(),
-            fspan=self.sp_fspan.value(),
-            fcenter=self.sp_fcenter.value(),
-            sweep_mode = self.sweep_log_switch.isOn(),
-            points=self.sp_points.value(),
-            level_variable = self.level_var_switch.isOn(),
-            level_unit = self.level_unit_cb.currentText(),
-            level = self.source_level.value(),
-            recev1_att = self.receive1_att.currentText(),
-            recev2_att = self.receive2_att.currentText(),
-            rbw=self.cb_bw.currentText(),
-            average=self.average_spinbox.value()
-        )
+        d = self.get_params()
         # print(d)
         self.params_changed.emit(d)
     

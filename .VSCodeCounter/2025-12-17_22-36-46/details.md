@@ -1,34 +1,40 @@
 # Details
 
-Date : 2025-11-29 11:42:37
+Date : 2025-12-17 22:36:46
 
 Directory h:\\SoftDev\\xFRA\\xFRA
 
-Total : 2111 files,  15755 codes, 703 comments, 481 blanks, all 16939 lines
+Total : 2136 files,  18715 codes, 1305 comments, 855 blanks, all 20875 lines
 
 [Summary](results.md) / Details / [Diff Summary](diff.md) / [Diff Details](diff-details.md)
 
 ## Files
 | filename | language | code | comment | blank | total |
 | :--- | :--- | ---: | ---: | ---: | ---: |
-| [README.md](/README.md) | Markdown | 24 | 0 | 0 | 24 |
-| [README\_en.md](/README_en.md) | Markdown | 23 | 0 | 0 | 23 |
-| [basic\_custom\_widget/QDragGroupBox.py](/basic_custom_widget/QDragGroupBox.py) | Python | 29 | 207 | 3 | 239 |
-| [basic\_custom\_widget/QEngLineEdit.py](/basic_custom_widget/QEngLineEdit.py) | Python | 84 | 17 | 19 | 120 |
+| [README.md](/README.md) | Markdown | 45 | 0 | 0 | 45 |
+| [README\_en.md](/README_en.md) | Markdown | 26 | 0 | 0 | 26 |
+| [basic\_custom\_widget/QDragGroupBox.py](/basic_custom_widget/QDragGroupBox.py) | Python | 30 | 231 | 3 | 264 |
+| [basic\_custom\_widget/QEngLineEdit.py](/basic_custom_widget/QEngLineEdit.py) | Python | 95 | 18 | 19 | 132 |
 | [basic\_custom\_widget/QIconButtonWidget.py](/basic_custom_widget/QIconButtonWidget.py) | Python | 55 | 28 | 12 | 95 |
-| [basic\_custom\_widget/QLabelComboBox.py](/basic_custom_widget/QLabelComboBox.py) | Python | 43 | 11 | 21 | 75 |
+| [basic\_custom\_widget/QLabelComboBox.py](/basic_custom_widget/QLabelComboBox.py) | Python | 57 | 16 | 25 | 98 |
+| [basic\_custom\_widget/QLabelLineEdit.py](/basic_custom_widget/QLabelLineEdit.py) | Python | 33 | 10 | 11 | 54 |
 | [basic\_custom\_widget/QSwitchButton.py](/basic_custom_widget/QSwitchButton.py) | Python | 82 | 10 | 23 | 115 |
 | [basic\_custom\_widget/\_\_init\_\_.py](/basic_custom_widget/__init__.py) | Python | 0 | 0 | 1 | 1 |
 | [brief\_function\_test/xConv\_plus\_waveWidget.py](/brief_function_test/xConv_plus_waveWidget.py) | Python | 34 | 4 | 7 | 45 |
-| [control\_widget.py](/control_widget.py) | Python | 157 | 12 | 37 | 206 |
+| [channelSet.py](/channelSet.py) | Python | 105 | 5 | 8 | 118 |
+| [control\_widget.py](/control_widget.py) | Python | 427 | 18 | 50 | 495 |
 | [custom\_plot\_widget/\_\_init\_\_.py](/custom_plot_widget/__init__.py) | Python | 0 | 0 | 1 | 1 |
 | [custom\_plot\_widget/kimi\_widget.py](/custom_plot_widget/kimi_widget.py) | Python | 261 | 105 | 82 | 448 |
 | [custom\_plot\_widget/s21\_widget.py](/custom_plot_widget/s21_widget.py) | Python | 98 | 24 | 24 | 146 |
 | [custom\_plot\_widget/smith\_widget.py](/custom_plot_widget/smith_widget.py) | Python | 127 | 34 | 19 | 180 |
+| [custom\_plot\_widget/style.json](/custom_plot_widget/style.json) | JSON | 24 | 0 | 1 | 25 |
 | [custom\_plot\_widget/template.py](/custom_plot_widget/template.py) | Python | 69 | 44 | 13 | 126 |
 | [custom\_plot\_widget/test.py](/custom_plot_widget/test.py) | Python | 14 | 1 | 4 | 19 |
-| [custom\_plot\_widget/waveWidget.py](/custom_plot_widget/waveWidget.py) | Python | 158 | 32 | 31 | 221 |
+| [custom\_plot\_widget/waveWidget.py](/custom_plot_widget/waveWidget.py) | Python | 212 | 50 | 40 | 302 |
 | [custom\_ribbon\_bar.py](/custom_ribbon_bar.py) | Python | 92 | 6 | 21 | 119 |
+| [custom\_tunnel/\_\_init\_\_.py](/custom_tunnel/__init__.py) | Python | 0 | 0 | 1 | 1 |
+| [custom\_tunnel/instru\_serial.py](/custom_tunnel/instru_serial.py) | Python | 9 | 0 | 4 | 13 |
+| [custom\_tunnel/instru\_socket.py](/custom_tunnel/instru_socket.py) | Python | 15 | 7 | 6 | 28 |
 | [eliminated\_widget/trace\_config.py](/eliminated_widget/trace_config.py) | Python | 279 | 52 | 44 | 375 |
 | [icon/bootstrap/0-circle-fill.svg](/icon/bootstrap/0-circle-fill.svg) | XML | 4 | 0 | 0 | 4 |
 | [icon/bootstrap/0-circle.svg](/icon/bootstrap/0-circle.svg) | XML | 4 | 0 | 0 | 4 |
@@ -2114,13 +2120,32 @@ Total : 2111 files,  15755 codes, 703 comments, 481 blanks, all 16939 lines
 | [icon/bootstrap/zoom-in.svg](/icon/bootstrap/zoom-in.svg) | XML | 5 | 0 | 0 | 5 |
 | [icon/bootstrap/zoom-out.svg](/icon/bootstrap/zoom-out.svg) | XML | 5 | 0 | 0 | 5 |
 | [icon/transmission.svg](/icon/transmission.svg) | XML | 44 | 1 | 3 | 48 |
-| [main.py](/main.py) | Python | 98 | 11 | 18 | 127 |
-| [plot\_widget.py](/plot_widget.py) | Python | 65 | 8 | 15 | 88 |
-| [requirements.txt](/requirements.txt) | pip requirements | 4 | 0 | 0 | 4 |
-| [trace\_config.py](/trace_config.py) | Python | 181 | 40 | 31 | 252 |
+| [icon/xFRA.svg](/icon/xFRA.svg) | XML | 118 | 1 | 3 | 122 |
+| [main.py](/main.py) | Python | 174 | 42 | 22 | 238 |
+| [plot\_widget.py](/plot_widget.py) | Python | 89 | 9 | 17 | 115 |
+| [requirements.txt](/requirements.txt) | pip requirements | 6 | 0 | 0 | 6 |
+| [trace\_config.py](/trace_config.py) | Python | 174 | 23 | 23 | 220 |
 | [trace\_widget.py](/trace_widget.py) | Python | 35 | 3 | 7 | 45 |
 | [xConv/\_\_init\_\_.py](/xConv/__init__.py) | Python | 0 | 0 | 1 | 1 |
-| [xConv/xConv.py](/xConv/xConv.py) | Python | 190 | 39 | 34 | 263 |
-| [xConv/xConvFormulaDef.json](/xConv/xConvFormulaDef.json) | JSON | 8 | 0 | 0 | 8 |
+| [xConv/xConv.py](/xConv/xConv.py) | Python | 192 | 39 | 33 | 264 |
+| [xConv/xConvFormulaDef.json](/xConv/xConvFormulaDef.json) | JSON | 14 | 0 | 0 | 14 |
+| [xConv/xConvSNPConverter.py](/xConv/xConvSNPConverter.py) | Python | 80 | 21 | 6 | 107 |
+| [xDriver/EM\_Class/Excitation/MSO5000.py](/xDriver/EM_Class/Excitation/MSO5000.py) | Python | 107 | 22 | 10 | 139 |
+| [xDriver/EM\_Class/Excitation/SDG2000X.py](/xDriver/EM_Class/Excitation/SDG2000X.py) | Python | 99 | 22 | 10 | 131 |
+| [xDriver/EM\_Class/Measurement/DHO800.py](/xDriver/EM_Class/Measurement/DHO800.py) | Python | 219 | 50 | 35 | 304 |
+| [xDriver/EM\_Class/Measurement/DHO900.py](/xDriver/EM_Class/Measurement/DHO900.py) | Python | 219 | 50 | 35 | 304 |
+| [xDriver/EM\_Class/Measurement/MSO5000.py](/xDriver/EM_Class/Measurement/MSO5000.py) | Python | 219 | 50 | 35 | 304 |
+| [xDriver/EM\_Class/Measurement/SDS6000.py](/xDriver/EM_Class/Measurement/SDS6000.py) | Python | 259 | 61 | 31 | 351 |
+| [xDriver/EM\_Class/Measurement/SDS800HD.py](/xDriver/EM_Class/Measurement/SDS800HD.py) | Python | 259 | 61 | 31 | 351 |
+| [xDriver/EM\_Class/typedef.py](/xDriver/EM_Class/typedef.py) | Python | 50 | 16 | 12 | 78 |
+| [xDriver/EM\_Class/xDrvEM.py](/xDriver/EM_Class/xDrvEM.py) | Python | 267 | 28 | 31 | 326 |
+| [xDriver/VNA\_Class/Bode100.py](/xDriver/VNA_Class/Bode100.py) | Python | 0 | 0 | 1 | 1 |
+| [xDriver/VNA\_Class/ENA.py](/xDriver/VNA_Class/ENA.py) | Python | 0 | 0 | 1 | 1 |
+| [xDriver/VNA\_Class/LibreVNA.py](/xDriver/VNA_Class/LibreVNA.py) | Python | 141 | 46 | 21 | 208 |
+| [xDriver/VNA\_Class/NanoVNA.py](/xDriver/VNA_Class/NanoVNA.py) | Python | 0 | 0 | 1 | 1 |
+| [xDriver/VNA\_Class/SVA1000X.py](/xDriver/VNA_Class/SVA1000X.py) | Python | 131 | 66 | 37 | 234 |
+| [xDriver/xDriver.py](/xDriver/xDriver.py) | Python | 22 | 17 | 4 | 43 |
+| [xDriver/xDriverStd.md](/xDriver/xDriverStd.md) | Markdown | 54 | 0 | 15 | 69 |
+| [xxx.csv](/xxx.csv) | CSV | 53 | 0 | 1 | 54 |
 
 [Summary](results.md) / Details / [Diff Summary](diff.md) / [Diff Details](diff-details.md)

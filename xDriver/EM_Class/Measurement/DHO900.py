@@ -9,7 +9,7 @@
 # average yes
 # min-freq 0
 # max-freq 200000000
-# channel 4
+# channelNum 4
 # channelAttn 0.0001 0.0002 0.0005 0.001 0.002 0.005 0.01 0.02 0.05 0.1 0.2 0.5 1 2 5 10 20 50 100 200 500 1000 2000 5000 10000 20000 50000
 # channelCoupling DC AC GND
 # channelBandwidth Full 200000000 100000000 20000000

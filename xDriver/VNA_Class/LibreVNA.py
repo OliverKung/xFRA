@@ -4,7 +4,7 @@
 # xDrvSetting begin
 # device-type VNA
 # model LibreVNA
-# tunnel SCPI socket
+# tunnel socket
 # average yes
 # min-freq 100000
 # max-freq 6000000000
