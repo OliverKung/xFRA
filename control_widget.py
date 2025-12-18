@@ -137,6 +137,7 @@ class ControlWidget(QWidget):
         self.level_unit_cb.setCurrentIndex(2)
         self.source_level = QEngLineEdit(alignment=Qt.AlignRight,suffix=self.level_unit_cb.currentText())
         self.source_level.setValue(0)
+        self.var_level_set_btn = QPushButton("Var Level Set")
 
         hb_var_switch.addWidget(QLabel("Level"),3)
         hb_var_switch.addWidget(QLabel("Constant"),1)
@@ -151,6 +152,7 @@ class ControlWidget(QWidget):
         h.addLayout(hb_var_switch)
         h.addLayout(hb_level)
         h.addLayout(hb_level_unit)
+        h.addWidget(self.var_level_set_btn)
 
         layout.addWidget(levelgpb)
 
@@ -189,15 +191,10 @@ class ControlWidget(QWidget):
         self.cb_bw.setCurrentText("300 Hz")
         self.cb_samplemethod = QLabelComboBox("Sample Method")
         self.cb_samplemethod.setComboItems(["Normal","Peak","Average"])
-        h = QHBoxLayout()
-        self.le_average_times = QEngLineEdit(alignment=Qt.AlignRight)
-        self.le_average_times.setValue(10)
-        self.averagetimeLabel = QLabel("Average Times")
-        h.addWidget(self.averagetimeLabel)
-        h.addWidget(self.le_average_times)
+        self.le_average_times = QLabelLineEdit("Average Times")
         v.addWidget(self.cb_bw)
         v.addWidget(self.cb_samplemethod)
-        v.addLayout(h)
+        v.addWidget(self.le_average_times)
         layout.addWidget(curgrp)
 
         layout.addStretch()
@@ -217,6 +214,7 @@ class ControlWidget(QWidget):
         # device type/model/tunnel
         self.device_type.currentTextChanged.connect(self._device_model_refresh)
         self.device_m_model.currentTextChanged.connect(self._update_model_setting)
+        self.device_e_model.currentTextChanged.connect(self._update_model_setting)
         # 下拉框
         for w in [ self.cb_bw, self.level_unit_cb, self.receive1_att, self.receive2_att,self.device_type,self.device_m_model,self.device_e_model,self.device_m_tunnel]:
             w.currentTextChanged.connect(self._notify)
@@ -228,15 +226,20 @@ class ControlWidget(QWidget):
         for w in [self.sp_fstart, self.sp_fstop, self.sp_fspan,self.sp_fcenter]:
             w.valueChanged.connect(self._source_level_update)
         self.cb_samplemethod.currentTextChanged.connect(self._update_samplemethod)
+        self.level_var_switch.toggled.connect(self._level_var_switch_toggled)
+
+    def _level_var_switch_toggled(self):
+        if self.level_var_switch.isOn():
+            self.source_level.setEnabled(False)
+        else:
+            self.source_level.setEnabled(True)
 
     def _update_samplemethod(self):
         method=self.cb_samplemethod.currentText()
         if method.lower()=="aver":
             self.le_average_times.setEnabled(True)
-            self.averagetimeLabel.setEnabled(True)
         else:
             self.le_average_times.setEnabled(False)
-            self.averagetimeLabel.setEnabled(False)
 
     def _source_level_update(self):
         for w in [self.sp_fstart, self.sp_fstop, self.sp_fspan,self.sp_fcenter]:
@@ -286,8 +289,7 @@ class ControlWidget(QWidget):
         self.device_e_tunnel.setVisible(visible)
         self.le_average_times.setVisible(visible)
         self.cb_samplemethod.setVisible(visible)
-        self.attgrp.setVisible(visible)
-        self.averagetimeLabel.setVisible(visible)
+        self.channelSetBtn.setVisible(visible)
         self.cb_bw.setVisible(not visible)
 
 
@@ -361,7 +363,9 @@ class ControlWidget(QWidget):
                     elif command.startswith('Receiver2Attn'):
                         self.receive2_att.setComboItems([item+" dB" for item in command.split(' ')[1:]])
         elif self.device_type.currentText()=="E-M":
-            if self.device_m_model.currentText() == "":
+            self.sweep_log_switch.setEnabled(True)
+            self.level_var_switch.setEnabled(True)
+            if self.device_m_model.currentText() == "" or self.device_e_model.currentText() == "":
                 return
             with open(self.EM_M_path / (self.device_m_model.currentText()+'.py'), 'rb') as f:
                 raw_data = f.read()
