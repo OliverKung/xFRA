@@ -242,6 +242,7 @@ class varLevelSetWindow(QWidget):
         self.ymax.textChanged.connect(self.update_y_range)
         self.ymin.textChanged.connect(self.update_y_range)
         layout.addWidget(self.buttons)
+        # stop at here 2025年12月18日22点44分
 
     def accept(self):
         self.close()
