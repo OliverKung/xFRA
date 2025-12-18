@@ -11,6 +11,7 @@ from basic_custom_widget.QLabelComboBox import QLabelComboBox
 from basic_custom_widget.QLabelLineEdit import QLabelLineEdit
 
 from channelSet import channelSet
+from varLevelSet import varLevelSetWindow
 
 from pathlib import Path
 import chardet
@@ -25,8 +26,12 @@ class ControlWidget(QWidget):
         self.EM_E_path = Path('./xDriver/EM_Class/Excitation/')
         self.EM_M_path = Path('./xDriver/EM_Class/Measurement/')
         self._build_ui()
-        self._connect_signals()
+
         self.channel_set_window = channelSet()
+        self.varLevelSetWindow = varLevelSetWindow()
+        self.point = []
+        self._connect_signals()
+
 
     # ---------- 构建 ----------
     def _build_ui(self):
@@ -201,6 +206,7 @@ class ControlWidget(QWidget):
 
         self._device_model_refresh()
         self._update_model_setting()
+        self._level_var_switch_toggled()
 
     # ---------- 信号 ----------
     def _connect_signals(self):
@@ -227,12 +233,43 @@ class ControlWidget(QWidget):
             w.valueChanged.connect(self._source_level_update)
         self.cb_samplemethod.currentTextChanged.connect(self._update_samplemethod)
         self.level_var_switch.toggled.connect(self._level_var_switch_toggled)
+        self.var_level_set_btn.clicked.connect(self._var_level_set_btn_clicked)
+        self.varLevelSetWindow.valueSet.connect(self._var_level_set_value_changed)
+    
+    def _var_level_set_value_changed(self, points):
+        print("Var Level Set values changed:", points)
+        self.point = points
+        self._notify()
+    
+    def _var_level_set_btn_clicked(self):
+        print("Var Level Set clicked")
+        if self.sweep_log_switch.isOn():
+            self.varLevelSetWindow.curve_editor.set_x_log_mode(True)
+        else:
+            self.varLevelSetWindow.curve_editor.set_x_log_mode(False)
+        fstart = self.sp_fstart.get_value()
+        fstop = self.sp_fstop.get_value()
+        if self.point == []:
+            print(type(self.point))
+            self.point.append( (fstart,self.source_level.get_value()) )
+            self.point.append( (fstop,self.source_level.get_value()) )
+            self.varLevelSetWindow.ymin.setValue(self.source_level.get_value()-1 if self.source_level.get_value()-1<self.source_level.get_value()*0.9 else self.source_level.get_value()*0.9)
+            self.varLevelSetWindow.ymax.setValue(self.source_level.get_value()+1 if self.source_level.get_value()+1>self.source_level.get_value()*1.1 else self.source_level.get_value()*1.1)
+            self.varLevelSetWindow.curve_editor.set_y_unit(self.level_unit_cb.currentText())
+            self.varLevelSetWindow.curve_editor.set_y_range(self.source_level.get_value()-1 if self.source_level.get_value()-1<self.source_level.get_value()*0.9 else self.source_level.get_value()*0.9,
+                                                            self.source_level.get_value()+1 if self.source_level.get_value()+1>self.source_level.get_value()*1.1 else self.source_level.get_value()*1.1)
+        self.varLevelSetWindow.curve_editor.set_points(self.point)
+        self.varLevelSetWindow.curve_editor.set_x_range(fstart,fstop)
+        # 弹出 var level set 窗口
+        if self.varLevelSetWindow != None:
+            self.varLevelSetWindow.show()
+        self._notify()
 
     def _level_var_switch_toggled(self):
         if self.level_var_switch.isOn():
-            self.source_level.setEnabled(False)
+            self.var_level_set_btn.setVisible(True)
         else:
-            self.source_level.setEnabled(True)
+            self.var_level_set_btn.setVisible(False)
 
     def _update_samplemethod(self):
         method=self.cb_samplemethod.currentText()

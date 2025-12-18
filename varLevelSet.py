@@ -2,8 +2,8 @@ import sys
 import numpy as np
 from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, 
                              QPushButton, QToolTip, QDialog, QFormLayout, 
-                             QLineEdit, QDialogButtonBox, QMessageBox)
-from PyQt5.QtCore import Qt, QPointF, QRectF
+                             QLineEdit, QDialogButtonBox, QMessageBox,QLabel)
+from PyQt5.QtCore import Qt, QPointF, QRectF, pyqtSignal
 from PyQt5.QtGui import QPainter, QPen, QColor, QBrush, QFont
 
 from basic_custom_widget.QEngLineEdit import QEngLineEdit
@@ -60,13 +60,23 @@ class AdvancedCurveEditor(QWidget):
         sorted_pts = sorted(self.points, key=lambda p: p.x())
         return [(p.x(), p.y()) for p in sorted_pts]
 
+    def set_points(self, points):
+        """设置所有点对，points 为 (频率, 幅度) 列表"""
+        self.points = [QPointF(x, y) for x, y in points]
+        self.update()
+
     def set_x_log_mode(self, enabled: bool):
         self.is_log_x = enabled
         self.update()
 
     def set_y_range(self, y_min, y_max):
+        print("Setting Y Range:", y_min, y_max)
         self.y_min, self.y_max = y_min, y_max
-        print("Y Range set to:", y_min, y_max)
+        for p in self.points:
+            if p.y() < y_min:
+                p.setY(y_min)
+            elif p.y() > y_max:
+                p.setY(y_max)
         self.update()
 
     def set_y_unit(self, unit: str):
@@ -216,6 +226,7 @@ class AdvancedCurveEditor(QWidget):
         self.selected_index = -1
 
 class varLevelSetWindow(QWidget):
+    valueSet = pyqtSignal(list) # 发射点对列表 [(频率, 幅度), ...]
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Var Level Setting")
@@ -227,11 +238,14 @@ class varLevelSetWindow(QWidget):
         layout.addWidget(self.curve_editor)
         
         btn_layout = QHBoxLayout()
-        self.ymax = QLabelLineEdit("Amp Max")
+
+        self.ymax = QEngLineEdit(alignment=Qt.AlignRight,suffix=self.curve_editor.y_unit)
         # self.ymax.setSuffix(self.curve_editor.y_unit)
-        self.ymin = QLabelLineEdit("Amp Min")
+        self.ymin = QEngLineEdit(alignment=Qt.AlignRight,suffix=self.curve_editor.y_unit)
         # self.ymin.setSuffix(self.curve_editor.y_unit)
+        btn_layout.addWidget(QLabel("Amp Max:"))
         btn_layout.addWidget(self.ymax)
+        btn_layout.addWidget(QLabel("Amp Max:"))
         btn_layout.addWidget(self.ymin)
         
         layout.addLayout(btn_layout)
@@ -239,12 +253,13 @@ class varLevelSetWindow(QWidget):
         self.buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, self)
         self.buttons.accepted.connect(self.accept)
         self.buttons.rejected.connect(self.reject)
-        self.ymax.textChanged.connect(self.update_y_range)
-        self.ymin.textChanged.connect(self.update_y_range)
+        self.ymax.valueChanged.connect(self.update_y_range)
+        self.ymin.valueChanged.connect(self.update_y_range)
         layout.addWidget(self.buttons)
-        # stop at here 2025年12月18日22点44分
 
     def accept(self):
+        points = self.curve_editor.get_points()
+        self.valueSet.emit(points)
         self.close()
 
     def reject(self):
@@ -252,8 +267,8 @@ class varLevelSetWindow(QWidget):
 
     def update_y_range(self):
         try:
-            y_max = float(self.ymax.currentText())
-            y_min = float(self.ymin.currentText())
+            y_max = self.ymax.get_value()
+            y_min = self.ymin.get_value()
             if y_max > y_min:
                 self.curve_editor.set_y_range(y_min, y_max)
         except ValueError:
