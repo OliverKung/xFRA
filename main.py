@@ -167,6 +167,7 @@ class BodeAnalyzer(QMainWindow):
 
     def _start_meas(self):
         d = self.ctrl.get_params()
+        print(d)
         # 检查d有无空元素
         for k, v in d.items():
             if type (v) == str and v == "":

@@ -260,6 +260,8 @@ class ControlWidget(QWidget):
                                                             self.source_level.get_value()+1 if self.source_level.get_value()+1>self.source_level.get_value()*1.1 else self.source_level.get_value()*1.1)
         self.varLevelSetWindow.curve_editor.set_points(self.point)
         self.varLevelSetWindow.curve_editor.set_x_range(fstart,fstop)
+        self.varLevelSetWindow.ymax.setSuffix(self.level_unit_cb.currentText())
+        self.varLevelSetWindow.ymin.setSuffix(self.level_unit_cb.currentText())
         # 弹出 var level set 窗口
         if self.varLevelSetWindow != None:
             self.varLevelSetWindow.show()
@@ -524,30 +526,41 @@ class ControlWidget(QWidget):
         self._notify()
 
     def _notify(self):
-        d = self.get_params()
+        pass
+        # d = self.get_params()
         # print(d)
-        self.params_changed.emit(d)
+        # self.params_changed.emit(d)
     
     def get_params(self):
         d = dict(
+            device_type=self.device_type.currentText(),
             device_m_address=self.device_m_address.text(),
             device_e_address=self.device_e_address.text(),
-            device_type=self.device_type.currentText(),
             device_m_model=self.device_m_model.currentText(),
             device_e_model=self.device_e_model.currentText(),
             device_m_tunnel=self.device_m_tunnel.currentText(),
+            device_e_tunnel=self.device_e_tunnel.currentText(),
+
             fstart=self.sp_fstart.value(),
             fstop=self.sp_fstop.value(),
             fspan=self.sp_fspan.value(),
             fcenter=self.sp_fcenter.value(),
             sweep_mode = self.sweep_log_switch.isOn(),
             points=self.sp_points.value(),
+
             level_variable = self.level_var_switch.isOn(),
             level_unit = self.level_unit_cb.currentText(),
             level = self.source_level.value(),
+            level_var_points = self.point,
+
             recev1_att = self.receive1_att.currentText(),
             recev2_att = self.receive2_att.currentText(),
+
             rbw=self.cb_bw.currentText(),
-            average=self.average_spinbox.value()
+            average=self.average_spinbox.value(),
+
+            sample_method=self.cb_samplemethod.currentText(),
+            average_times=self.le_average_times.text(),
         )
+        print(d)
         return d
