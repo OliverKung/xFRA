@@ -32,7 +32,6 @@ class ControlWidget(QWidget):
         self.point = []
         self._connect_signals()
 
-
     # ---------- 构建 ----------
     def _build_ui(self):
         self.setMinimumWidth(400)
@@ -532,35 +531,72 @@ class ControlWidget(QWidget):
         # self.params_changed.emit(d)
     
     def get_params(self):
-        d = dict(
-            device_type=self.device_type.currentText(),
-            device_m_address=self.device_m_address.text(),
-            device_e_address=self.device_e_address.text(),
-            device_m_model=self.device_m_model.currentText(),
-            device_e_model=self.device_e_model.currentText(),
-            device_m_tunnel=self.device_m_tunnel.currentText(),
-            device_e_tunnel=self.device_e_tunnel.currentText(),
-
-            fstart=self.sp_fstart.value(),
-            fstop=self.sp_fstop.value(),
-            fspan=self.sp_fspan.value(),
-            fcenter=self.sp_fcenter.value(),
-            sweep_mode = self.sweep_log_switch.isOn(),
-            points=self.sp_points.value(),
-
-            level_variable = self.level_var_switch.isOn(),
-            level_unit = self.level_unit_cb.currentText(),
-            level = self.source_level.value(),
-            level_var_points = self.point,
-
-            recev1_att = self.receive1_att.currentText(),
-            recev2_att = self.receive2_att.currentText(),
-
-            rbw=self.cb_bw.currentText(),
-            average=self.average_spinbox.value(),
-
-            sample_method=self.cb_samplemethod.currentText(),
-            average_times=self.le_average_times.text(),
-        )
+        channelset = self.channel_set_window.get_channel_settings()
+        d = {'type':self.device_type.currentText(),
+            'device_m':{
+                'model': self.device_m_model.currentText(),
+                'tunnel': self.device_m_tunnel.currentText(),
+                'addr': self.device_m_address.text()
+            },
+            'device_e':{
+                'model': self.device_e_model.currentText(),
+                'tunnel': self.device_e_tunnel.currentText(),
+                'addr': self.device_e_address.text()
+            },
+            'frequency':{
+                'fstart': self.sp_fstart.value(),
+                'fstop': self.sp_fstop.value(),
+                'fspan': self.sp_fspan.value(),
+                'fcenter': self.sp_fcenter.value(),
+                'sweep_mode': self.sweep_log_switch.isOn(),
+                'points': self.sp_points.value()
+            },
+            'sweep':{
+                'sweep_mode': self.sweep_log_switch.isOn(),
+                'points': self.sp_points.value()
+            },
+            'level':{
+                'level_variable': self.level_var_switch.isOn(),
+                'level_unit': self.level_unit_cb.currentText(),
+                'level': self.source_level.value(),
+                'level_var_points': self.point
+            },
+            'meas1':{
+                'attn': self.receive1_att.currentText(),
+                'channel': channelset['Meas1']['Channel'],
+                'couple': channelset['Meas1']['Couple'],
+                'inputimp': channelset['Meas1']['InputImp'],
+                'bandwidthlimit': channelset['Meas1']['BandwidthLimit']
+            },
+            'meas2':{
+                'attn': self.receive2_att.currentText(),
+                'channel': channelset['Meas2']['Channel'],
+                'couple': channelset['Meas2']['Couple'],
+                'inputimp': channelset['Meas2']['InputImp'],
+                'bandwidthlimit': channelset['Meas2']['BandwidthLimit']
+            },
+            'syncMeas':{
+                'channel': channelset['SyncMeas']['Channel'],
+                'couple': channelset['SyncMeas']['Couple'],
+                'inputimp': channelset['SyncMeas']['InputImp'],
+                'bandwidthlimit': channelset['SyncMeas']['BandwidthLimit']
+            },
+            'excitation':{
+                'channel': channelset['Excit']['Channel'],
+                'inputimp': channelset['Excit']['InputImp']
+            },
+            'syncExcit':{
+                'channel': channelset['SyncExct']['Channel'],
+                'inputimp': channelset['SyncExct']['InputImp'],
+                'enabled': channelset['SyncExct']['Enabled']
+            },
+            'sample_method':{
+                'method': self.cb_samplemethod.currentText(),
+                'average_times': self.le_average_times.text()
+            },
+            'average': self.average_spinbox.value(),
+            'ifbw': self.cb_bw.currentText(),
+        }
+        
         print(d)
         return d

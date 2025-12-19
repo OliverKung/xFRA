@@ -13,6 +13,7 @@
 # channelAttn 0.0001 0.0002 0.0005 0.001 0.002 0.005 0.01 0.02 0.05 0.1 0.2 0.5 1 2 5 10 20 50 100 200 500 1000 2000 5000 10000 20000 50000
 # channelCoupling DC AC GND
 # channelBandwidth Full 200000000 100000000 20000000
+# channelImpedance 1M 50
 # samplemode norm peak aver hires
 # xDrvSetting end
 #python LibreVNA.py --device-address 192.168.1.100 --start-freq 1e6 --stop-freq 1e9 --sweep-type LIN --sweep-points 501 --ifbw 1e3 --source-level -10 --averages 3 --output-file meas.s2p

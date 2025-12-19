@@ -29,6 +29,24 @@ class channelSet(QWidget):
     def __init__(self):
         super().__init__()
         self._build_ui()
+        self.on_sync_trigger_toggled(self.syncTriggerCheckBox.isChecked())
+        self.syncTriggerCheckBox.clicked.connect(self.on_sync_trigger_toggled)
+
+    def on_sync_trigger_toggled(self, checked):
+        if checked:
+            self.SyncExctChannelSelect.setEnabled(True)
+            self.SyncExctInputImp.setEnabled(True)
+            self.SyncMeasBandwidthLimit.setEnabled(True)
+            self.SyncMeasChannelSelect.setEnabled(True)
+            self.SyncMeasInputImp.setEnabled(True)
+            self.SyncMeasCouple.setEnabled(True)
+        else:
+            self.SyncExctChannelSelect.setEnabled(False)
+            self.SyncExctInputImp.setEnabled(False)
+            self.SyncMeasBandwidthLimit.setEnabled(False)
+            self.SyncMeasChannelSelect.setEnabled(False)
+            self.SyncMeasCouple.setEnabled(False)
+            self.SyncMeasInputImp.setEnabled(False)
 
     def _build_ui(self):
         self.setWindowTitle("xFRA E-M Class Channel Set")
@@ -106,10 +124,45 @@ class channelSet(QWidget):
         self.buttonBox.rejected.connect(self.reject)
     def accept(self):
         print("Settings accepted")
+        self.get_channel_settings()
         self.close()
     def reject(self):
         print("Settings canceled")
         self.close()
+    
+    def get_channel_settings(self):
+        settings = {
+            "Meas1": {
+                "Channel": self.Meas1ChannelSelect.currentText(),
+                "Couple": self.Meas1Couple.currentText(),
+                "InputImp": self.Meas1InputImp.currentText(),
+                "BandwidthLimit": self.Meas1BandwidthLimit.currentText()
+            },
+            "Meas2": {
+                "Channel": self.Meas2ChannelSelect.currentText(),
+                "Couple": self.Meas2Couple.currentText(),
+                "InputImp": self.Meas2InputImp.currentText(),
+                "BandwidthLimit": self.Meas2BandwidthLimit.currentText()
+            },
+            "SyncMeas": {
+                "Channel": self.SyncMeasChannelSelect.currentText(),
+                "Couple": self.SyncMeasCouple.currentText(),
+                "InputImp": self.SyncMeasInputImp.currentText(),
+                "BandwidthLimit": self.SyncMeasBandwidthLimit.currentText()
+            },
+            "Excit": {
+                "Channel": self.ExcitationChannelSelect.currentText(),
+                "InputImp": self.ExcitationInputImp.currentText()
+            },
+            "SyncExct": {
+                "Channel": self.SyncExctChannelSelect.currentText(),
+                "InputImp": self.SyncExctInputImp.currentText(),
+                "Enabled": self.syncTriggerCheckBox.isChecked()
+            }
+        }
+        print(type(settings))
+        print(settings)
+        return settings
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
