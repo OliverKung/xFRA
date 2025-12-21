@@ -169,11 +169,14 @@ class PyBode():
                 e_instru.set_freq_amp(freqSquare,1,syncTrigger)    #set signal source
 
             voltage1=m_instru.voltage(inputChannel,wave_parameter.RMS,freq)
+            print("Input RMS Voltage: %.4f V at Freq: %.2f Hz"%(voltage1,freq))
             voltage2=m_instru.voltage(outputChannel,wave_parameter.RMS,freq)
+            print("Output RMS Voltage: %.4f V at Freq: %.2f Hz"%(voltage2,freq))
             phase=m_instru.phase(inputChannel,outputChannel)
+            print("Phase Difference: %.2f deg at Freq: %.2f Hz"%(phase,freq))
 
             gain=voltage2/voltage1
-            # print("Freq: %.2f Hz, Gain: %.4f, Phase: %.2f deg"%(freq,gain,phase))
+            print("Freq: %.2f Hz, Gain: %.4f, Phase: %.2f deg"%(freq,gain,phase))
             # print("Input RMS Voltage: %.4f V, Output RMS Voltage: %.4f V"%(voltage1,voltage2))
             # 将数据添加到DataFrame中
             df.loc[len(df.index)]=[freq,gain,phase]

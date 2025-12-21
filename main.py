@@ -169,26 +169,60 @@ class BodeAnalyzer(QMainWindow):
         d = self.ctrl.get_params()
         print(d)
         # 检查d有无空元素
-        for k, v in d.items():
-            if type (v) == str and v == "":
-                if d['device_type'] == 'VNA' and k in ['device_e_model', 'device_e_address']:
-                    continue
-                else:
-                    print(f"Parameter {k} is not set. Please check control panel.")
-                    return
-            if v is None:
-                print(f"Parameter {k} is not set. Please check control panel.")
-                return
+        # for k, v in d.items():
+        #     if type (v) == str and v == "":
+        #         if d['device_type'] == 'VNA' and k in ['device_e_model', 'device_e_address']:
+        #             continue
+        #         else:
+        #             print(f"Parameter {k} is not set. Please check control panel.")
+        #             return
+        #     if v is None:
+        #         print(f"Parameter {k} is not set. Please check control panel.")
+        #         return
         print("Starting single measurement...")
-        if d['device_type'] == 'VNA':
-            cmd = f'python .\\xDriver\\VNA_Class\\{d["device_m_model"]}.py --device-address {d["device_m_address"]} ' + \
-                    f'--device-tunnel {d["device_tunnel"]} --start-freq {d["fstart"]} --stop-freq {d["fstop"]} ' + \
-                    f'--sweep-type {"LOG" if d["sweep_mode"] else "LIN"} --sweep-points {d["points"]} ' + \
-                    f'--averages {d["average"]} --ifbw {d["rbw"]} --source-level {d["level"]} --output-file .\\data\\measurement.s2p '
+        str_freq_list = ""
+        str_amp_list = ""
+        if d["level"]["level_variable"] == True:
+            str_freq_list = ""
+            str_amp_list = ""
+            for point in d["level"]["level_var_points"]:
+                str_freq_list += str([point[0]]).replace("[", "").replace("]", "") + ","
+                str_amp_list += str(point[1]) + ","
+        str_freq_list = str_freq_list[:-1]
+        str_amp_list = str_amp_list[:-1]
+        if d['type'] == 'VNA':
+            cmd = None
+            pass
+            cmd = f'python .\\xDriver\\VNA_Class\\{d["device_m"]["model"]}.py --device-address {d["device_m"]["addr"]} ' + \
+                    f'--device-tunnel {d["device_m"]["tunnel"]} --start-freq {d["freq"]["fstart"]} --stop-freq {d["freq"]["fstop"]} ' + \
+                    f'--sweep-type {"LOG" if d["freq"]["sweep_mode"] else "LIN"} --sweep-points {d["freq"]["points"]} ' + \
+                    f'--averages {d["average"]} --ifbw {d["ifbw"]} --source-level {d["level"]["level"]} --output-file .\\data\\measurement.s2p'
+        elif d["type"] == 'E-M':
+            cmd = None
+            pass
+            cmd = f"python .\\xDriver\\EM_Class\\xDrvEM.py" +\
+                    f' --e-device-model {d["device_e"]["model"]} --m-device-model {d["device_m"]["model"]} ' +\
+                    f' --e-device-tunnel {d["device_e"]["tunnel"]} --m-device-tunnel {d["device_m"]["tunnel"]} ' +\
+                    f' --m-device-addr {d["device_m"]["addr"]} --e-device-addr {d["device_e"]["addr"]} ' +\
+                    f' --average-sample-times {d["sample_method"]["average_times"]} --average {d["average"]} ' +\
+                    f' --start-freq {d["freq"]["fstart"]} --end-freq {d["freq"]["fstop"]} ' +\
+                    f' --sweep-type {"LOG" if d["freq"]["sweep_mode"] else "LIN"} --sweep-points {d["freq"]["points"]} ' +\
+                    f' --ifbw {d["ifbw"]} ' +\
+                    f' --source-amp {d["level"]["level"]} --source-amp-unit {d["level"]["level_unit"]} ' +\
+                    f' --output-file .\\data\\measurement.s2p ' +\
+                    f' --sample-method {d["sample_method"]["method"]} ' +\
+                    f' --excition-channel {d["excitation"]["channel"]} ' +\
+                    f' --input-channel {d["meas1"]["channel"]} ' +\
+                    f' --output-channel {d["meas2"]["channel"]} ' +\
+                    f' --sync-channel {d["syncMeas"]["channel"]} ' +\
+                    f' --sync-trigger {d["syncExcit"]["channel"]} ' +\
+                    f' --sync-trigger-enable {1 if d["syncExcit"]["enabled"] else 0} '
+                    # f' --settling-time {d["settling_time"]} '
+
         if cmd is not None:
             # 新开一个进程，进程执行os.system(cmd)命令，以免阻塞主进程
             self.meas_process = subprocess.Popen(cmd, shell=True)
-            # print(f"Executing command: {cmd}")
+            print(f"Executing command: {cmd}")
             self.checkLifeTime.start(100)  # Check every second
 
     def check_lifetime(self):

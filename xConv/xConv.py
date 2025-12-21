@@ -76,7 +76,7 @@ class xConvS2PReader:
                 s21.append(complex(values[3], values[4]))
                 s12.append(complex(values[5], values[6]))
                 s22.append(complex(values[7], values[8]))
-                print(f"Parsed line: freq={values[0]}, S11={s11[-1]}, S12={s12[-1]}, S21={s21[-1]}, S22={s22[-1]}")
+                # print(f"Parsed line: freq={values[0]}, S11={s11[-1]}, S12={s12[-1]}, S21={s21[-1]}, S22={s22[-1]}")
         
         # 频率单位转换到Hz
         freq = np.array(freq)

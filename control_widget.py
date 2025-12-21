@@ -401,6 +401,7 @@ class ControlWidget(QWidget):
                     elif command.startswith('Receiver2Attn'):
                         self.receive2_att.setComboItems([item+" dB" for item in command.split(' ')[1:]])
         elif self.device_type.currentText()=="E-M":
+            self.sp_points.setRange(11,10001)  
             self.sweep_log_switch.setEnabled(True)
             self.level_var_switch.setEnabled(True)
             if self.device_m_model.currentText() == "" or self.device_e_model.currentText() == "":
@@ -543,7 +544,7 @@ class ControlWidget(QWidget):
                 'tunnel': self.device_e_tunnel.currentText(),
                 'addr': self.device_e_address.text()
             },
-            'frequency':{
+            'freq':{
                 'fstart': self.sp_fstart.value(),
                 'fstop': self.sp_fstop.value(),
                 'fspan': self.sp_fspan.value(),
@@ -583,11 +584,11 @@ class ControlWidget(QWidget):
             },
             'excitation':{
                 'channel': channelset['Excit']['Channel'],
-                'inputimp': channelset['Excit']['InputImp']
+                'loadimp': channelset['Excit']['InputImp']
             },
             'syncExcit':{
                 'channel': channelset['SyncExct']['Channel'],
-                'inputimp': channelset['SyncExct']['InputImp'],
+                'loadimp': channelset['SyncExct']['InputImp'],
                 'enabled': channelset['SyncExct']['Enabled']
             },
             'sample_method':{

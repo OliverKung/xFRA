@@ -90,53 +90,76 @@ class SDS6000:
     # 自动调节量程
     def autoscale(self):
         self.instr.write(":AUT")
+        time.sleep(15)
     
     # 读取并自动调整电压量程
     def voltage(self,channel:channel_number,items:wave_parameter,freqIn=None):
-        max_try_times = 5
+        max_try_times = 10
         loopcounter = 0
         if freqIn is None:
             freq = self.freq(channel)
         else:
             freq = freqIn
         time.sleep(self.getSampleDelay(freq))
+        print("Measuring voltage at freq %.2f Hz"%(freq))
         voltage=self.getvoltage(channel,wave_parameter.Peak2Peak)
+        print("Initial voltage reading is %.4f V"%(voltage))
         self.setTimebaseScale(0.25*1/freq)
+        print("Timebase scale set to %.6f s/div for freq %.2f Hz"%(0.25*1/freq,freq))
         channel_atte=self.getChannelAtte(channel)
+        print("Channel attenuation is %.4f V/V"%(channel_atte))
         channel_scale=self.getChannelScale(channel)
+        print("Initial channel scale is %.4f V/div"%(channel_scale))
         sample_delay=self.getSampleDelay(freq)
+        print("Sample delay set to %.4f s for freq %.2f Hz with average times %d"%(sample_delay,freq,self.average_times))
         # print("Sample delay set to "+str(sample_delay)+" s for freq "+str(freq)+" Hz with average times "+str(self.average_times))
         # Auto scale for input channel when voltage is too large
         while(voltage>channel_scale*8 and loopcounter<max_try_times):#When amplitude is too large, auto scale
             # print("CH1 voltage scale too large, voltage is "+str(voltage)+",scale is "+str(channel_scale)+", Freq is "+str(freq))
             self.setChannelScale(channel,channel_scale*8)
+            print("Auto adjusting voltage scale, voltage is "+str(voltage)+",scale is "+str(channel_scale*8)+", Freq is "+str(freq))
             time.sleep(self.getSampleDelay(freq))
+            print("Measuring voltage at freq %.2f Hz"%(freq))
             channel_scale=channel_scale*8
+            print("New channel scale is %.4f V/div"%(channel_scale))
             channel_scale = voltageScaleLimiter(channel_scale,channel_atte,freq)
+            print("Limited channel scale is %.4f V/div"%(channel_scale))
             voltage=self.getvoltage(channel,wave_parameter.Peak2Peak)
+            print("New voltage reading is %.4f V"%(voltage))
             loopcounter=loopcounter+1
+            print("Auto adjusting voltage scale, voltage is "+str(voltage)+",scale is "+str(channel_scale)+", Freq is "+str(freq))
         # 当调整次数过多，重新进行一次自动调节
         if loopcounter==max_try_times:
             # print("voltage scale auto adjust failed, autoscale once. voltage is "+str(voltage)+",scale is "+str(channel_scale)+", Freq is "+str(freq))
             self.autoscale()
+            print("voltage scale auto adjust failed, autoscale once. voltage is "+str(voltage)+",scale is "+str(channel_scale)+", Freq is "+str(freq))
             # autoscale之后，示波器通道设定可能改变，重新设置通道参数
             # self.setOSCChannel(inputChannel,outputChannel,self.syncChannel,self.sample_method,self.average_times,freq)
             channel_scale=self.getChannelScale(channel)
+            print("After autoscale, new channel scale is %.4f V/div"%(channel_scale))
         # used to be used in PyBode, for some reason, now deprecated
         loopCounter = 0
         # 自动调整量程，直到读数在合理范围内
         while((voltage<2*channel_scale or voltage>6*channel_scale) and loopCounter<max_try_times):
             # print("Auto adjusting voltage scale, voltage is "+str(voltage)+",scale is "+str(channel_scale)+", Freq is "+str(freq))
             time.sleep(sample_delay)
+            print("Measuring voltage at freq %.2f Hz"%(freq))
             voltage=self.getvoltage(channel,wave_parameter.Peak2Peak)
+            print("Voltage reading is %.4f V"%(voltage))
             # 如果超量程读数出错，采用有效值重新计算
             if(voltage>1e10):
                 voltage=self.getvoltage(channel,wave_parameter.rms)*4*1.414
+                print("Overrange voltage reading error, using RMS value to recalculate, new voltage is %.4f V"%(voltage))
             channel_scale = voltageScaleLimiter(voltage/4,channel_atte,freq)
+            print("Adjusted channel scale is %.4f V/div"%(channel_scale))
             self.setChannelScale(channel,channel_scale)
+            print("Set channel scale to %.4f V/div"%(channel_scale))
             loopCounter = loopCounter+1
+            print("Auto adjusting voltage scale, voltage is "+str(voltage)+",scale is "+str(channel_scale)+", Freq is "+str(freq))
         time.sleep(sample_delay)
+        print("Final voltage measurement at freq %.2f Hz"%(freq))
         voltage=self.getvoltage(channel,items)
+        print("Final voltage reading is %.4f V"%(voltage))
         return voltage
 
     # 读取频率
@@ -180,11 +203,20 @@ class SDS6000:
         self.measure_items.append(measure_item(channel=channelA, channelB=channelB, items=wave_parameter.FREQ, measure_idx=measure_idx))
         time.sleep(0.1)
         cmd = ":MEAS:ADV:P"+str(measure_idx)+":VAL?"
+        counter = 0
         while True:
+            if(counter > 5):
+                self.autoscale()
+                time.sleep(3)
+                self.voltage(channelA,wave_parameter.RMS)
+                self.voltage(channelB,wave_parameter.RMS)
+                time.sleep(0.1)
+                counter = 0
             try:
                 float_value = float(self.instr.query(cmd))
                 break
             except ValueError:
+                counter = counter+1
                 time.sleep(0.1)
         return float_value
 
