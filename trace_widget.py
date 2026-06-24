@@ -40,6 +40,11 @@ class TraceWidget(QWidget):
         d = {"traces": self.data}
         self.params_changed.emit(d)
     
+    def load_config(self, traces: list):
+        """Clear and rebuild all trace boxes from saved config."""
+        self.dw.load_config(traces)
+        self._notify()
+
     def get_trace_params(self):
         self.data=self.dw.get_all_content()
         return self.data

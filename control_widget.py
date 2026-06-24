@@ -525,6 +525,51 @@ class ControlWidget(QWidget):
             self.channel_set_window.show()
         self._notify()
 
+    def load_device_config(self, cfg: dict):
+        """Restore all device settings from a saved config dict."""
+        d = cfg
+        # Device type
+        self.device_type.setCurrentText(d.get("type", "VNA"))
+        dm = d.get("device_m", {})
+        self.device_m_model.setCurrentText(dm.get("model", "SVA1000X"))
+        self.device_m_address.setText(dm.get("addr", ""))
+        self.device_m_tunnel.setCurrentText(dm.get("tunnel", "USB"))
+        de = d.get("device_e", {})
+        self.device_e_model.setCurrentText(de.get("model", "SDG2000X"))
+        self.device_e_address.setText(de.get("addr", ""))
+        self.device_e_tunnel.setCurrentText(de.get("tunnel", "USB"))
+        # Frequency
+        f = d.get("freq", {})
+        self.sp_fstart.setValue(f.get("fstart", 10))
+        self.sp_fstop.setValue(f.get("fstop", 1000000))
+        self.sp_fcenter.setValue(f.get("fcenter", 500005))
+        self.sp_fspan.setValue(f.get("fspan", 999990))
+        self.sp_points.setValue(f.get("points", 201))
+        self.sweep_log_switch.setOn(f.get("sweep_mode", False))
+        # Level
+        lv = d.get("level", {})
+        self.level_var_switch.setOn(lv.get("level_variable", False))
+        self.level_unit_cb.setCurrentText(lv.get("level_unit", "dBm"))
+        self.source_level.setValue(lv.get("level", -10))
+        self.point = lv.get("level_var_points", [])
+        # Average / IFBW
+        self.average_spinbox.setValue(d.get("average", 1))
+        self.cb_bw.setCurrentText(d.get("ifbw", "1 kHz") if isinstance(d.get("ifbw"), str) else str(d.get("ifbw", 1000)))
+        # Sample method
+        sm = d.get("sample_method", {})
+        self.cb_samplemethod.setCurrentText(sm.get("method", "Normal"))
+        self.le_average_times.setText(str(sm.get("average_times", "1")))
+        # Channel settings (meas1, meas2, excitation, sync)
+        ch = {
+            "Meas1": d.get("meas1", {}),
+            "Meas2": d.get("meas2", {}),
+            "SyncMeas": d.get("syncMeas", {}),
+            "Excit": d.get("excitation", {}),
+            "SyncExct": d.get("syncExcit", {}),
+        }
+        if hasattr(self, "channel_set_window"):
+            self.channel_set_window.load_channel_settings(ch)
+
     def _notify(self):
         pass
         # d = self.get_params()

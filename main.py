@@ -21,6 +21,7 @@ from custom_ribbon_bar import customRibbonBar
 
 #===============加载xConv================#
 from xConv.xConv import xConvS2PReader, xConvFormulaTransformer
+from utils.yaml_utils import yaml_dump, yaml_load
 
 #=============== 主窗口 ===============#
 import ctypes
@@ -29,6 +30,8 @@ class BodeAnalyzer(QMainWindow):
     def __init__(self):
         super().__init__()
         self.file_path = None
+        self.current_config_file = None
+        self.meas_process = None
         # 针对每一条曲线都创建对应的s2pdata
         self.s2pdata = None
         self.trace_param = {}
@@ -87,7 +90,47 @@ class BodeAnalyzer(QMainWindow):
         
     def trace_params_changed(self, params: dict):
         return
-    
+
+    # ---------- Save / Save As ----------
+    def _collect_config(self):
+        from datetime import datetime
+        config = {
+            "version": "1.0",
+            "timestamp": datetime.now().isoformat(),
+            "device": self.ctrl.get_params(),
+            "traces": list(self.trace.get_trace_params().values()),
+            "file_path": self.file_path,
+        }
+        return config
+
+    def _save(self):
+        if self.current_config_file:
+            self._write_config(self.current_config_file)
+        else:
+            self._save_as()
+
+    def _save_as(self):
+        path, _ = QFileDialog.getSaveFileName(
+            self, "Save Configuration As",
+            self.current_config_file or "./config.xfra",
+            "xFRA Config (*.xfra);;YAML Files (*.yaml *.yml);;All Files (*)"
+        )
+        if path:
+            self._write_config(path)
+
+    def _write_config(self, path):
+        try:
+            config = self._collect_config()
+            yaml_str = yaml_dump(config)
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(yaml_str)
+            self.current_config_file = path
+            fname = os.path.basename(path)
+            self.setWindowTitle("xFRA - " + fname)
+            print("Configuration saved to: " + path)
+        except Exception as e:
+            print("Failed to save configuration: " + str(e))
+
     def update_plot(self):
         self.trace_param = self.trace.get_trace_params()
         # if not self.s2pdata:
@@ -152,7 +195,28 @@ class BodeAnalyzer(QMainWindow):
         return reader.read()
 
 
-    def open_file(self):
+    def _open_or_open_file(self):
+        """Open a .xfra config file and restore all settings."""
+        path, _ = QFileDialog.getOpenFileName(
+            self, "Open Configuration", "./",
+            "xFRA Config (*.xfra *.yaml *.yml);;All Files (*)"
+        )
+        if not path:
+            return
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                config = yaml_load(f.read())
+            print("Configuration loaded from: " + path)
+            self.current_config_file = path
+            if "device" in config:
+                self.ctrl.load_device_config(config["device"])
+            if "traces" in config:
+                self.trace.load_config(config["traces"])
+            fname = os.path.basename(path)
+            self.setWindowTitle("xFRA - " + fname)
+            self.update_plot()
+        except Exception as e:
+            print("Failed to load configuration: " + str(e))
         # open the file select and save the file path to self.file_path
         path, _ = QFileDialog.getOpenFileName(
             self, "Select Data File", "", "Data Files (*.csv *.txt *.s2p);;All Files (*)")
@@ -224,20 +288,34 @@ class BodeAnalyzer(QMainWindow):
             self.meas_process = subprocess.Popen(cmd, shell=True)
             print(f"Executing command: {cmd}")
             self.checkLifeTime.start(100)  # Check every second
+            self.ribbon.stop_button.setEnabled(True)
+            self.ribbon.single_meas_button.setEnabled(False)
 
     def check_lifetime(self):
         if self.meas_process.poll() is not None:  # Process has finished
             print("Measurement process finished.")
             self.checkLifeTime.stop()
+            self.ribbon.stop_button.setEnabled(False)
+            self.ribbon.single_meas_button.setEnabled(True)
             self.load_s2p_file(".\\data\\measurement.s2p")
             print("Data loaded successfully.")
             self.update_plot()
+
+    def _stop_meas(self):
+        """Stop the current single measurement."""
+        if hasattr(self, 'meas_process') and self.meas_process is not None:
+            self.meas_process.terminate()
+            self.meas_process = None
+        self.checkLifeTime.stop()
+        self.ribbon.stop_button.setEnabled(False)
+        self.ribbon.single_meas_button.setEnabled(True)
+        print("Measurement stopped by user.")
 
     def _connect_signals(self):
         # ribbon 新建按钮 -> 刷新曲线
         self.ribbon.new_button.clicked.connect(self.plot.replot)
         # ribbon 打开按钮 -> 打开文件
-        self.ribbon.open_button.clicked.connect(self.open_file)
+        self.ribbon.open_button.clicked.connect(self._open_or_open_file)
         # ribbon 绘图按钮 -> 刷新曲线
         self.ribbon.plot_large_button.clicked.connect(self.update_plot)
         # ribbon 添加曲线按钮 -> 在trace widget中添加trace box
@@ -251,6 +329,10 @@ class BodeAnalyzer(QMainWindow):
         self.ribbon.add_circuit_fit_btn.clicked.connect(lambda: self.trace.dw.add_box(box_type='circuit_fit'))
         # 点击启动按钮，开始扫描
         self.ribbon.single_meas_button.clicked.connect(self._start_meas)
+        self.ribbon.stop_button.clicked.connect(self._stop_meas)
+        self.ribbon.save_button.clicked.connect(self._save)
+        self.ribbon.save_as_button.clicked.connect(self._save_as)
+        self.ribbon.report_button.clicked.connect(self.update_plot)
         # 控制面板改动 -> 刷新曲线
         self.trace.params_changed.connect(self.trace_params_changed)
         

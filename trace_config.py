@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys
+import os
 from typing import List, Dict, Any
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QGroupBox, QComboBox, QSpinBox,
@@ -7,7 +8,8 @@ from PyQt5.QtWidgets import (
     QGridLayout, QStackedWidget, QPushButton
 )
 # 顶部导入区补一行
-from PyQt5.QtCore import pyqtSignal   # <-- 新增
+from PyQt5.QtCore import pyqtSignal, Qt
+from PyQt5.QtWidgets import QCompleter
 
 from basic_custom_widget.QLabelComboBox import QLabelComboBox
 from basic_custom_widget.QIconButtonWidget import QIconButtonWidget
@@ -24,6 +26,27 @@ class TraceConfigWidget(QGroupBox):
         self._trace_list: List[str] = []
         self._init_ui()
 
+    def set_config(self, cfg: Dict[str, Any]):
+        """Restore widget state from a saved config dict."""
+        # block signals during restore
+        self._connect_signals_state = False
+        try:
+            self.lcb_datasource.setCurrentText(cfg.get("datasource", "Meas"))
+            self.lcb_meas.setCurrentText(cfg.get("meas_type", "Meas"))
+            cat_map = {"Imped": "Imped (Z)", "Refl": "Refl (S₁₁)", "Gain": "Gain (S₂₁)", "Admit": "Admit (Y)"}
+            self.lcb_category.setCurrentText(cat_map.get(cfg.get("category", "Gain"), cfg.get("category", "Gain")))
+            self.le_expression.setText(cfg.get("expression", ""))
+            self.lcb_fmt.setCurrentText(cfg.get("format", "Mag(dB)"))
+            self.lcb_x_axis_scale.setCurrentText(cfg.get("x_axis_scale", "Log"))
+            self.unit_suffix_lineedit.setText(cfg.get("y_suffix", ""))
+            self.checkbox_unwrap_phase.setChecked(cfg.get("unwrap_phase", False))
+            if cfg.get("datasource") == "SNP File":
+                self.snp_file_path.setText(cfg.get("snp_file_path", ""))
+        finally:
+            self._connect_signals_state = True
+        self._build_meas_page()
+        self._build_fmt_page()
+
     def get_config(self) -> Dict[str, Any]:
         # ---------- 外部接口：返回当前配置 ----------
         cfg = {
@@ -31,6 +54,7 @@ class TraceConfigWidget(QGroupBox):
             "category"     : self.lcb_category.currentText(),
             "expression"   : self.le_expression.text(),
             "format"       : self.lcb_fmt.currentText(),
+            "datasource"   : self.lcb_datasource.currentText(),
         }
         
         datasouce = self.lcb_datasource.currentText()
@@ -42,13 +66,13 @@ class TraceConfigWidget(QGroupBox):
         meas_type = self.lcb_meas.currentText()
         if meas_type == "Meas":
             category_type = self.lcb_category.currentText()
-            if category_type == "Imped":
+            if category_type.startswith("Imped"):
                 cfg["expression"] = "z11"
-            elif category_type == "Refl":
+            elif category_type.startswith("Refl"):
                 cfg["expression"] = "s11"
-            elif category_type == "Gain":
+            elif category_type.startswith("Gain"):
                 cfg["expression"] = "s21"
-            elif category_type == "Admit":
+            elif category_type.startswith("Admit"):
                 cfg["expression"] = "1/z11"
         else:
             pass  # 继续往下取参数
@@ -114,13 +138,14 @@ class TraceConfigWidget(QGroupBox):
         )
         self.lcb_category = QLabelComboBox(# lcb stands for LabelComboBox
             label_text="Category",
-            combo_items=["Imped", "Refl", "Gain", "Admit"]
+            combo_items=["Imped (Z)", "Refl (S₁₁)", "Gain (S₂₁)", "Admit (Y)"]
         )
         self.lcb_combined_with = QLabelComboBox( # lcb stands for LabelComboBox
             label_text="Combined With",
             combo_items=["None"]
         )
         self.le_expression = QLineEdit() #le stands for LineEdit
+        self._setup_autocomplete()
         
         self.top.addWidget(self.lcb_datasource)
         self.top.addWidget(self.snp_file_path)
@@ -129,6 +154,41 @@ class TraceConfigWidget(QGroupBox):
         self.top.addWidget(self.lcb_meas)
         self.top.addWidget(self.lcb_category)
         self.top.addWidget(self.le_expression,3)
+
+    # ---------- Autocomplete ----------
+    def _setup_autocomplete(self):
+        """Set up formula autocomplete for the expression line edit."""
+        import json, os
+        # Base completions: S-params, variables, functions
+        words = [
+            # S-parameters
+            "s11", "s12", "s21", "s22",
+            # Variables
+            "freq", "z0", "omega", "pi", "e", "j",
+            # Math
+            "abs(", "real(", "imag(", "phase(", "db(", "mag(",
+            "sqrt(", "log(", "log10(", "exp(",
+            "sin(", "cos(", "tan(", "asin(", "acos(", "atan(",
+            "sinh(", "cosh(", "tanh(",
+            "degrees(", "radians(", "conj(", "unwrap(",
+            "pow(", "round(", "max(", "min(",
+            "complex(", "ones_like(", "zeros_like(", "where(",
+        ]
+        # Load registered formula names from JSON
+        fpath = os.path.join(os.path.dirname(__file__), "xConv", "xConvFormulaDef.json")
+        try:
+            if os.path.isfile(fpath):
+                with open(fpath, "r", encoding="utf-8") as jf:
+                    formulas = json.load(jf)
+                words.extend(f for f in formulas.keys() if f not in ("z0", "omega"))
+        except Exception:
+            pass
+
+        completer = QCompleter(words, self)
+        completer.setCaseSensitivity(Qt.CaseInsensitive)
+        completer.setFilterMode(Qt.MatchContains)
+        completer.setCompletionMode(QCompleter.PopupCompletion)
+        self.le_expression.setCompleter(completer)
 
     # ---------- 初始化Format ---------
     def _init_fmt(self):

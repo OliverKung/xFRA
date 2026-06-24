@@ -225,6 +225,25 @@ class DragWaveWidget(QWidget):
             data[idx]['trace_id'] = idx
         self.contentChanged.emit(data)
     # ---------- 采集不发送信号 ----------------------
+    def load_config(self, traces: list):
+        """Clear all boxes and rebuild from a list of trace config dicts."""
+        # Remove all existing boxes
+        for idx in list(self.trace_boxes.keys()):
+            box = self.trace_boxes[idx]
+            self._lay.removeWidget(box)
+            box.deleteLater()
+        self.trace_boxes.clear()
+        self._total_traces = 0
+        # Add boxes from config
+        for i, tr in enumerate(traces):
+            self._total_traces += 1
+            idx = self._total_traces
+            box = trace_config_GroupBox(idx)
+            box.trace_config.set_config(tr)
+            self.trace_boxes[idx] = box
+            self._lay.insertWidget(self._lay.count() - 1, box)
+        self._collect_and_emit()
+
     def get_all_content(self):
         data={}
         for idx, box in self.trace_boxes.items():

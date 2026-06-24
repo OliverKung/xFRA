@@ -1,0 +1,69 @@
+version: "1.0"
+timestamp: "2026-06-24T15:17:24.868711"
+device:
+  type: VNA
+  device_m:
+    model: SVA1000X
+    tunnel: visa
+    addr: "192.168.31.123"
+  device_e:
+    model: SDG2000X
+    tunnel: VISA
+    addr: ''
+  freq:
+    fstart: 1000000.0
+    fstop: 100000000.0
+    fspan: 99000000.0
+    fcenter: 50500000.0
+    sweep_mode: false
+    points: 201
+  sweep:
+    sweep_mode: false
+    points: 201
+  level:
+    level_variable: false
+    level_unit: dBm
+    level: 0.0
+    level_var_points: []
+  meas1:
+    attn: "0 dB"
+    channel: CH1
+    couple: DC
+    inputimp: "1 MΩ"
+    bandwidthlimit: Full
+  meas2:
+    attn: "0 dB"
+    channel: CH1
+    couple: DC
+    inputimp: "1 MΩ"
+    bandwidthlimit: Full
+  syncMeas:
+    channel: CH1
+    couple: DC
+    inputimp: "1 MΩ"
+    bandwidthlimit: Full
+  excitation:
+    channel: CH1
+    loadimp: HiZ
+  syncExcit:
+    channel: CH1
+    loadimp: HiZ
+    enabled: false
+  sample_method:
+    method: Normal
+    average_times: ''
+  average: 1
+  ifbw: "10000"
+traces:
+  -
+    meas_type: Meas
+    category: Imped
+    expression: "abs(z11)"
+    format: Mag
+    snp_file_path: ".\\data\\measurement.s2p"
+    unwrap_phase: false
+    x_axis_scale: Log
+    y_suffix: ''
+    color: "#ef5350"
+    trace_id: 1
+file_path: null

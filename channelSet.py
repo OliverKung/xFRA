@@ -130,6 +130,32 @@ class channelSet(QWidget):
         print("Settings canceled")
         self.close()
     
+    def load_channel_settings(self, ch: dict):
+        """Restore channel settings from a saved dict."""
+        m1 = ch.get("Meas1", {})
+        self.Meas1ChannelSelect.setCurrentText(m1.get("Channel", "CH1"))
+        self.Meas1Couple.setCurrentText(m1.get("Couple", "DC"))
+        self.Meas1InputImp.setCurrentText(m1.get("InputImp", "1 MΩ"))
+        self.Meas1BandwidthLimit.setCurrentText(m1.get("BandwidthLimit", "Full"))
+        m2 = ch.get("Meas2", {})
+        self.Meas2ChannelSelect.setCurrentText(m2.get("Channel", "CH2"))
+        self.Meas2Couple.setCurrentText(m2.get("Couple", "DC"))
+        self.Meas2InputImp.setCurrentText(m2.get("InputImp", "1 MΩ"))
+        self.Meas2BandwidthLimit.setCurrentText(m2.get("BandwidthLimit", "Full"))
+        sm = ch.get("SyncMeas", {})
+        self.SyncMeasChannelSelect.setCurrentText(sm.get("Channel", "CH1"))
+        self.SyncMeasCouple.setCurrentText(sm.get("Couple", "DC"))
+        self.SyncMeasInputImp.setCurrentText(sm.get("InputImp", "1 MΩ"))
+        self.SyncMeasBandwidthLimit.setCurrentText(sm.get("BandwidthLimit", "Full"))
+        ex = ch.get("Excit", {})
+        self.ExcitationChannelSelect.setCurrentText(ex.get("Channel", "CH1"))
+        self.ExcitationInputImp.setCurrentText(ex.get("InputImp", "HiZ"))
+        se = ch.get("SyncExct", {})
+        self.SyncExctChannelSelect.setCurrentText(se.get("Channel", "CH1"))
+        self.SyncExctInputImp.setCurrentText(se.get("InputImp", "HiZ"))
+        self.syncTriggerCheckBox.setChecked(se.get("Enabled", False))
+        self.on_sync_trigger_toggled(se.get("Enabled", False))
+
     def get_channel_settings(self):
         settings = {
             "Meas1": {
