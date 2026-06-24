@@ -1,13 +1,13 @@
-﻿# xDrviver/VNA_Class/SVA1000X.py
+﻿# xDrviver/VNA_Class/SVA1000X_Emu.py
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # xDrvSetting begin
 # device-type VNA
-# model SVA1000X
+# model SVA1000X_Emu
 # tunnel visa socket
 # average yes
-# min-freq 1000000
-# max-freq 1500000000
+# min-freq 100
+# max-freq 5000000000
 # sweep-type LOG LIN
 # sweep-points 101 10001
 # ifbw 10000
@@ -18,8 +18,8 @@
 # Receiver2Attn 0
 # xDrvSetting end
 # Usage examples:
-#   VISA:   python SVA1000X.py --device-tunnel VISA   --device-address TCPIP0::192.168.1.100::INSTR ...
-#   SOCKET: python SVA1000X.py --device-tunnel SOCKET --device-address 127.0.0.1 --device-port 5025 ...
+#   VISA:   python SVA1000X_Emu.py --device-tunnel VISA   --device-address TCPIP0::192.168.1.100::INSTR ...
+#   SOCKET: python SVA1000X_Emu.py --device-tunnel SOCKET --device-address 127.0.0.1 --device-port 5025 ...
 
 import argparse
 import sys

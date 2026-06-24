@@ -1,25 +1,25 @@
 version: "1.0"
-timestamp: "2026-06-24T15:17:24.868711"
+timestamp: "2026-06-24T22:31:46.576855"
 device:
   type: VNA
   device_m:
-    model: SVA1000X
-    tunnel: visa
-    addr: "192.168.31.123"
+    model: SVA1000X_Emu
+    tunnel: socket
+    addr: "127.0.0.1"
   device_e:
     model: SDG2000X
     tunnel: VISA
     addr: ''
   freq:
-    fstart: 1000000.0
-    fstop: 100000000.0
-    fspan: 99000000.0
-    fcenter: 50500000.0
-    sweep_mode: false
-    points: 201
+    fstart: 100.0
+    fstop: 1000000000.0
+    fspan: 999999900.0
+    fcenter: 500000050.0
+    sweep_mode: true
+    points: 501
   sweep:
-    sweep_mode: false
-    points: 201
+    sweep_mode: true
+    points: 501
   level:
     level_variable: false
     level_unit: dBm
@@ -57,9 +57,10 @@ device:
 traces:
   -
     meas_type: Meas
-    category: Imped
-    expression: "abs(z11)"
-    format: Mag
+    category: "Gain (S₂₁)"
+    expression: "20*log10(abs(s21))"
+    format: "Mag(dB)"
+    datasource: Meas
     snp_file_path: ".\\data\\measurement.s2p"
     unwrap_phase: false
     x_axis_scale: Log
