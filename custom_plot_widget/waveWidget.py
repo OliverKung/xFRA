@@ -156,7 +156,9 @@ class waveWidget(QtWidgets.QWidget):
         # 获取所有数据中数据最大值和最小值，并更新viewBox的y范围限制
         self.y_min = self.y_min if np.min(self.data[name]) > self.y_min else np.min(self.data[name])
         self.y_max = np.max(self.data[name]) if np.max(self.data[name]) > self.y_max else self.y_max
-        self.pw.getViewBox().setLimits(yMin=self.y_min - abs(0.1 * (self.y_max-self.y_min)), yMax=self.y_max + abs(0.1 * (self.y_max-self.y_min)))
+        delta = abs(self.y_max - self.y_min)
+        margin = delta * 0.1 if delta > 1e-15 else max(abs(self.y_max) * 0.1, 0.01)
+        self.pw.getViewBox().setLimits(yMin=self.y_min - margin, yMax=self.y_max + margin)
         
         if unit == "":
             self.set_axis_labels('Frequency (Hz)', name)
