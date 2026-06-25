@@ -4,15 +4,18 @@ from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QGroupBox,
                              QFrame, QRadioButton, QButtonGroup, QTextEdit,
                              QProgressBar, QDialogButtonBox, QCheckBox,
                              QSplitter, QScrollArea)
-from PyQt5.QtCore import Qt, QSize, QTimer
+from PyQt5.QtCore import Qt, QSize, QTimer, pyqtSignal
+from xConv.xConvCal import xConvCalibrator
 from PyQt5.QtGui import QFont, QIcon
 from pathlib import Path
 
 
 class CalibrationMeasureRow(QWidget):
     """Single row: step label + file path + status"""
-    def __init__(self, label: str, parent=None):
+    measure_requested = pyqtSignal(str)  # emits the row key
+    def __init__(self, label: str, parent=None, key: str = ""):
         super().__init__(parent)
+        self._key = key
         self.setLayout(QHBoxLayout(self))
         self.layout().setContentsMargins(2, 2, 2, 2)
 
@@ -21,29 +24,39 @@ class CalibrationMeasureRow(QWidget):
         self.label.setStyleSheet("font-weight: bold;")
 
         self.path_edit = QLineEdit()
-        self.path_edit.setPlaceholderText("Select .s2p measurement file...")
+        self.path_edit.setPlaceholderText("Double-click to load .s2p")
         self.path_edit.setReadOnly(True)
+        self.path_edit.mouseDoubleClickEvent = lambda e: self._browse()
 
-        self.browse_btn = QPushButton("\U0001f4c2 Browse")
-        self.browse_btn.setFixedWidth(80)
-
-        self.status_label = QLabel("\u26a0 Not loaded")
-        self.status_label.setStyleSheet("color: orange; font-weight: bold;")
-        self.status_label.setFixedWidth(85)
+        self.status_label = QLabel("\u274C")
+        self.status_label.setStyleSheet("font-size: 16px;")
+        # self.status_label.setFixedWidth(85)
 
         self.layout().addWidget(self.label)
         self.layout().addWidget(self.path_edit, 1)
-        self.layout().addWidget(self.browse_btn)
         self.layout().addWidget(self.status_label)
+        self.measure_btn = QPushButton("⏯️")
+        # self.measure_btn.setFixedWidth(36)
+        self.measure_btn.setToolTip("Measure this standard")
+        self.measure_btn.clicked.connect(lambda: self.measure_requested.emit(self._key))
+        self.layout().addWidget(self.measure_btn)
+
+    def _browse(self):
+        path, _ = QFileDialog.getOpenFileName(
+            self, "Select .s2p measurement file",
+            "", "Touchstone (*.s2p);;All Files (*)"
+        )
+        if path:
+            self.set_file(path)
 
     def set_file(self, path: str):
         self.path_edit.setText(path)
         if path:
-            self.status_label.setText("\u2714 Loaded")
-            self.status_label.setStyleSheet("color: green; font-weight: bold;")
+            self.status_label.setText("\u2705")
+            self.status_label.setStyleSheet("font-size: 16px;")
         else:
-            self.status_label.setText("\u26a0 Not loaded")
-            self.status_label.setStyleSheet("color: orange; font-weight: bold;")
+            self.status_label.setText("\u26ab")
+            self.status_label.setStyleSheet("font-size: 16px;")
 
     def get_file(self) -> str:
         return self.path_edit.text()
@@ -63,20 +76,12 @@ class CalibrationStandardGroup(QWidget):
         layout.addWidget(title_label)
 
         for key, step_label in steps:
-            row = CalibrationMeasureRow(step_label, self)
-            row.browse_btn.clicked.connect(lambda _, k=key: self._browse(k))
+            row = CalibrationMeasureRow(step_label, self, key)
+            pass  # browsing handled by row double-click
             self.rows[key] = row
             layout.addWidget(row)
 
         layout.addStretch()
-
-    def _browse(self, key: str):
-        path, _ = QFileDialog.getOpenFileName(
-            self, f"Select {key} calibration file",
-            "", "Touchstone (*.s2p);;All Files (*)"
-        )
-        if path:
-            self.rows[key].set_file(path)
 
     def get_files(self) -> dict:
         return {k: row.get_file() for k, row in self.rows.items()}
@@ -266,7 +271,7 @@ class xConvCalibrationDialog(QDialog):
             self.output_path.setText(path)
 
     def _on_compute(self):
-        """Validate input and trigger calibration"""
+        """Validate input and run calibration computation"""
         cal_type = self.type_radio.checkedId()
         group = self.standard_group_solt if cal_type == 1 else self.standard_group_osl
 
@@ -280,34 +285,62 @@ class xConvCalibrationDialog(QDialog):
                                 "Please select an output path for the calibration matrix!")
             return
 
-        files = group.get_files()
+        files_dict = group.get_files()
         output = self.output_path.text()
+        cal_name = "SOLT" if cal_type == 1 else "OSL"
 
         self.info_text.clear()
-        self.info_text.append("\U0001f4cb Calibration Input Summary:")
-        for key, fpath in files.items():
+        self.info_text.append("Calibration Input Summary:")
+        for key, fpath in files_dict.items():
             if fpath:
+                from pathlib import Path
                 self.info_text.append(f"  {key}: {Path(fpath).name}")
-        self.info_text.append(f"\n\U0001f4e4 Output path: {output}")
-        self.info_text.append(f"\n\U0001f4d0 Calibration type: {'SOLT (2-Port)' if cal_type == 1 else 'OSL (1-Port)'}")
-        self.info_text.append("\n\u2705 Input validation passed, ready to compute...")
+        self.info_text.append(f"Output: {output}")
+        self.info_text.append(f"Type: {cal_name}")
+        self.info_text.append("Computing calibration...")
 
         self.progress_bar.setVisible(True)
         self.progress_bar.setRange(0, 0)
         self.compute_btn.setEnabled(False)
-        self.compute_btn.setText("\u23f3 Computing...")
+        self.compute_btn.setText("Computing...")
 
-        QTimer.singleShot(1000, self._finish_compute)
+        # Run computation directly (processEvents allows UI to update)
+        from PyQt5.QtWidgets import QApplication
+        QApplication.processEvents()
+        self._run_compute(cal_name, files_dict, output)
 
-    def _finish_compute(self):
-        self.progress_bar.setVisible(False)
-        self.compute_btn.setEnabled(True)
-        self.compute_btn.setText("\U0001f9ee Compute Calibration")
-        self.info_text.append("\n\U0001f3af Calibration completed! Matrix saved.")
-        QMessageBox.information(self, "Calibration Complete",
-                                "Calibration matrix calculation complete!\nCalibration data can be used in subsequent conversions.")
+    def _run_compute(self, cal_name, files_dict, output):
+        """Run the actual calibration computation and export."""
+        try:
+            calibrator = xConvCalibrator()
+            result = calibrator.calibrate_from_files(cal_name, files_dict)
+            calibrator.export_cal_to_s2p(result, output)
+
+            from pathlib import Path
+            out_path = Path(output)
+            if out_path.exists():
+                self.info_text.append(f"Calibration saved to: {output}")
+                self.info_text.append(f"Frequency points: {len(result.freq)}")
+                self.info_text.append(f"Range: {result.freq[0]/1e6:.2f} MHz - {result.freq[-1]/1e6:.2f} MHz")
+                QMessageBox.information(self, "Calibration Complete",
+                                        f"Calibration matrix saved to:\n{output}")
+            else:
+                self.info_text.append(f"Error: File was not created at {output}")
+                QMessageBox.critical(self, "Export Error",
+                                     f"File was not created at:\n{output}")
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            self.info_text.append(f"Error: {str(e)}")
+            QMessageBox.critical(self, "Calibration Error", str(e))
+        finally:
+            self.progress_bar.setVisible(False)
+            self.compute_btn.setEnabled(True)
+            self.compute_btn.setText("Compute Calibration")
 
     # ---------- Public API ----------
+    # ---------- Public API ----------
+# ---------- Public API ----------
     def get_calibration_config(self) -> dict:
         cal_type = "SOLT" if self.type_radio.checkedId() == 1 else "OSL"
         group = self.standard_group_solt if cal_type == "SOLT" else self.standard_group_osl
