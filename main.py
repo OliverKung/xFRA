@@ -1,4 +1,4 @@
-﻿import os
+import os
 import subprocess
 import sys
 #=============== MultiProcessing ===============#
@@ -13,17 +13,18 @@ from PyQt5.QtGui import QFont, QIcon
 from numpy import trace
 from pyqtribbon import RibbonBar
 
-#===============鐢ㄦ埛widget===============#
+#===============用户widget===============#
 from control_widget import ControlWidget
 from plot_widget import PlotWidget
 from trace_widget import TraceWidget
 from custom_ribbon_bar import customRibbonBar
 
-#===============鍔犺浇xConv================#
+#===============加载xConv================#
 from xConv.xConv import xConvS2PReader, xConvFormulaTransformer
+from xConv.xConvCalibrationDialog import xConvCalibrationDialog
 from utils.yaml_utils import yaml_dump, yaml_load
 
-#=============== 涓荤獥鍙?===============#
+#=============== 主窗�?===============#
 import ctypes
 
 class BodeAnalyzer(QMainWindow):
@@ -32,10 +33,11 @@ class BodeAnalyzer(QMainWindow):
         self.file_path = None
         self.current_config_file = None
         self.meas_process = None
-        # 閽堝姣忎竴鏉℃洸绾块兘鍒涘缓瀵瑰簲鐨剆2pdata
+        # 针�?每一条曲线都创建对应的s2pdata
         self.s2pdata = None
         self.trace_param = {}
         self.xConv = xConvFormulaTransformer()
+        self.calibration_dialog = None
         self.checkLifeTime = QTimer()
         self.checkLifeTime.timeout.connect(self.check_lifetime)
         self.setWindowTitle("xFRA - A Universal Frequency Response Analyzer ")
@@ -45,7 +47,7 @@ class BodeAnalyzer(QMainWindow):
         self._create_ribbonbar()
         self._connect_signals()
 
-    # ---------- 鑿滃崟鏍?----------
+    # ---------- 菜单�?----------
     def _create_menu(self):
         bar = self.menuBar()
         file = bar.addMenu("File")
@@ -67,13 +69,13 @@ class BodeAnalyzer(QMainWindow):
         view.addAction("Zoom")
         view.addAction("Unwrap phase")
 
-    # ---------- ribbon bar鎺т欢 ----------
+    # ---------- ribbon bar控件 ----------
     def _create_ribbonbar(self):
         self.ribbon = customRibbonBar()
         self.setMenuBar(self.ribbon)
 
 
-    # ---------- 涓績鎺т欢 ----------
+    # ---------- �?��控件 ----------
     def _create_central(self):
         splitter = QSplitter(Qt.Horizontal)
 
@@ -142,22 +144,22 @@ class BodeAnalyzer(QMainWindow):
         log_idx = 0
         lin_idx = 0
         
-        # 娓呯┖plot_widget涓墍鏈夌殑waveWidget
+        # 清空plot_widget�?��有的waveWidget
         self.plot.del_all_wave_widget()
-        # 鑾峰彇trace_param涓殑姣忎竴鏉race淇℃伅锛屽苟鎸夌収x-axis绫诲瀷娣诲姞鍒板搴旂殑waveWidget涓?
+        # 获取trace_param�?��每一�?race信息，并按照x-axis类型添加到�?应的waveWidget�?
         for trace_param in self.trace_param.values():
-            # 濡傛灉trace_param宸茶鍒犻櫎锛屽垯璺宠繃
+            # 如果trace_param已�?删除，则跳过
             if trace_param.get('deleted', False):
                 continue
-            # 璇诲彇S2P鐨勬暟鎹?
+            # 读取S2P的数�?
             s2pdata = self.load_s2p_file(trace_param['snp_file_path'])
             xConv= xConvFormulaTransformer()
             xConv.load_formulas(s2pdata, "xConv\\xConvFormulaDef.json")
-            # 璁＄畻x_data鍜寉_data
+            # 计算x_data和y_data
             x_data = s2pdata['freq']
             y_data = xConv.apply_formula(s2pdata, trace_param['expression'])
             freq_axis = trace_param['x_axis_scale'].lower()
-            # 鏍规嵁鍧愭爣绫诲瀷鍐冲畾娣诲姞鍒板摢涓獁aveWidget
+            # 根据坐标类型决定添加到哪个waveWidget
             if freq_axis == 'log':
                 wave_key = f'log_{log_idx+1}'
                 if wave_key not in self.plot.get_wave_widget_list():
@@ -172,7 +174,7 @@ class BodeAnalyzer(QMainWindow):
                 trace_name = trace_param['category']+"_"+trace_param['format']
             else:
                 trace_name = trace_param['expression']
-            # 娣诲姞trace鍒板搴旂殑waveWidget
+            # 添加trace到�?应的waveWidget
             self.plot.add_trace(
                 wave_key=wave_key,
                 name=trace_name,
@@ -182,9 +184,9 @@ class BodeAnalyzer(QMainWindow):
                 label=trace_name,
                 trace_color=trace_param['color']
             )
-    # ---------- 璇诲彇鏂囦欢锛岃繑鍥炰竴涓猻2p鏁版嵁瀛楀吀 ----------
+    # ---------- 读取文件，返回一个s2p数据字典 ----------
     def load_s2p_file(self, path: str):
-        # 鍘婚櫎鏂囦欢璺緞鐨勬嫇灞曞悕
+        # 去除文件�?��的拓展名
         base_path = os.path.splitext(path)[0]
         if not base_path.endswith('_RI'):
             print("Converting file to RI format using xConv...")
@@ -221,7 +223,7 @@ class BodeAnalyzer(QMainWindow):
     def _start_meas(self):
         d = self.ctrl.get_params()
         print(d)
-        # 妫€鏌鏈夋棤绌哄厓绱?
+        # 检�?有无空元�?
         # for k, v in d.items():
         #     if type (v) == str and v == "":
         #         if d['device_type'] == 'VNA' and k in ['device_e_model', 'device_e_address']:
@@ -273,7 +275,7 @@ class BodeAnalyzer(QMainWindow):
                     # f' --settling-time {d["settling_time"]} '
 
         if cmd is not None:
-            # 鏂板紑涓€涓繘绋嬶紝杩涚▼鎵цos.system(cmd)鍛戒护锛屼互鍏嶉樆濉炰富杩涚▼
+            # 新开一�?��程，进程执�?os.system(cmd)命令，以免阻塞主进程
             self.meas_process = subprocess.Popen(cmd, shell=True)
             print(f"Executing command: {cmd}")
             self.checkLifeTime.start(100)  # Check every second
@@ -290,6 +292,14 @@ class BodeAnalyzer(QMainWindow):
             print("Data loaded successfully.")
             self.update_plot()
 
+
+    def _open_calibration(self):
+        """��У׼���öԻ���"""
+        if self.calibration_dialog is None:
+            self.calibration_dialog = xConvCalibrationDialog(self)
+        self.calibration_dialog.show()
+        self.calibration_dialog.raise_()
+
     def _stop_meas(self):
         """Stop the current single measurement."""
         if hasattr(self, 'meas_process') and self.meas_process is not None:
@@ -301,38 +311,39 @@ class BodeAnalyzer(QMainWindow):
         print("Measurement stopped by user.")
 
     def _connect_signals(self):
-        # ribbon 鏂板缓鎸夐挳 -> 鍒锋柊鏇茬嚎
+        # ribbon 新建按钮 -> 刷新曲线
         self.ribbon.new_button.clicked.connect(self.plot.replot)
-        # ribbon 鎵撳紑鎸夐挳 -> 鎵撳紑鏂囦欢
+        # ribbon 打开按钮 -> 打开文件
         self.ribbon.open_button.clicked.connect(self._open_or_open_file)
-        # ribbon 缁樺浘鎸夐挳 -> 鍒锋柊鏇茬嚎
+        # ribbon 绘图按钮 -> 刷新曲线
         self.ribbon.plot_large_button.clicked.connect(self.update_plot)
-        # ribbon 娣诲姞鏇茬嚎鎸夐挳 -> 鍦╰race widget涓坊鍔爐race box
+        # ribbon 添加曲线按钮 -> 在trace widget�?��加trace box
         self.ribbon.add_trace_btn.clicked.connect(lambda: self.trace.dw.add_box())
-        # ribbon 娣诲姞math鎸夐挳 -> 鍦╰race widget涓坊鍔爉ath box
+        # ribbon 添加math按钮 -> 在trace widget�?��加math box
         self.ribbon.add_math_btn.setVisible(False)
         self.ribbon.add_math_btn.clicked.connect(lambda: self.trace.dw.add_box(box_type='math'))
-        # ribbon 娣诲姞expression鎸夐挳 -> 鍦╰race widget涓坊鍔爀xpression box
+        # ribbon 添加expression按钮 -> 在trace widget�?��加expression box
         self.ribbon.add_expression_btn.clicked.connect(lambda: self.trace.dw.add_box(box_type='expression'))
-        # ribbon 娣诲姞circuit fit鎸夐挳 -> 鍦╰race widget涓坊鍔燾ircuit fit box
+        self.ribbon.calibration_btn.clicked.connect(self._open_calibration)
+        # ribbon 添加circuit fit按钮 -> 在trace widget�?��加circuit fit box
         self.ribbon.add_circuit_fit_btn.clicked.connect(lambda: self.trace.dw.add_box(box_type='circuit_fit'))
-        # 鐐瑰嚮鍚姩鎸夐挳锛屽紑濮嬫壂鎻?
+        # 点击�?��按钮，开始扫�?
         self.ribbon.single_meas_button.clicked.connect(self._start_meas)
         self.ribbon.stop_button.clicked.connect(self._stop_meas)
         self.ribbon.save_button.clicked.connect(self._save)
         self.ribbon.save_as_button.clicked.connect(self._save_as)
         self.ribbon.report_button.clicked.connect(self.update_plot)
-        # 鎺у埗闈㈡澘鏀瑰姩 -> 鍒锋柊鏇茬嚎
+        # 控制面板改动 -> 刷新曲线
         self.trace.params_changed.connect(self.trace_params_changed)
         
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    # 璁剧疆鎵樼洏鍥炬爣
+    # 设置托盘图标
     # app.setWindowIcon(QIcon("./icon/xFRA.png"))
     # tray_Icon = QSystemTrayIcon(QIcon("./icon/xFRA.png"), parent=app)
     # tray_Icon.show()
-    # 璁剧疆浠诲姟鏍忓浘鏍?
+    # 设置任务栏图�?
     font = QFont("Arial",10)
     app.setStyle("Fusion")
     app.setFont(font)

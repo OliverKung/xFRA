@@ -71,6 +71,7 @@ class customRibbonBar(RibbonBar):
         self.add_math_btn = traces_panel.addLargeButton("Add Math",QIcon("./icon/bootstrap/plus-slash-minus.svg"))
         self.add_expression_btn = traces_panel.addLargeButton("Add Expression",QIcon("./icon/bootstrap/calculator.svg"))
         self.add_circuit_fit_btn = traces_panel.addLargeButton("Add Circuit Fit",QIcon("./icon/circuit_fit.png"))
+        self.calibration_btn = traces_panel.addLargeButton("Calibration",QIcon("./icon/bootstrap/gear.svg"))
         stability_analysis_panel = self.category_measurement.addPanel("Stability Analysis",showPanelOptionButton=False)
         stability_analysis_panel.addLabel("Instability Point:")
         stability_analysis_panel.addMediumComboBox(["    +1    ","    -1    "])
